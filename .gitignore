@@ -1,0 +1,36 @@
+# Compiled class files
+*.class
+target/
+*.jar
+*.war
+*.ear
+
+# Node dependencies and build output
+node_modules/
+dist/
+build/
+.npm
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# OS Generated
+.DS_Store
+Thumbs.db

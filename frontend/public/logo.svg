@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="20" fill="url(#primaryGrad)" />
+  <!-- Sacred Tirupati Namam & Kalasam / Arch Symbol -->
+  <path d="M 50 16 L 68 34 L 62 34 L 50 22 L 38 34 L 32 34 Z" fill="url(#goldGrad)" />
+  <!-- Namam White side lines -->
+  <path d="M 38 36 L 44 36 L 44 64 C 44 70 38 70 38 64 Z" fill="#FFFFFF" />
+  <path d="M 56 36 L 62 36 L 62 64 C 62 70 56 70 56 64 Z" fill="#FFFFFF" />
+  <!-- Center Tilakam -->
+  <path d="M 48 38 L 52 38 L 52 68 C 52 72 48 72 48 68 Z" fill="#EF4444" />
+  <!-- Golden base band -->
+  <rect x="25" y="74" width="50" height="6" rx="3" fill="url(#goldGrad)" />
+  <text x="50" y="90" font-family="'Outfit', sans-serif" font-weight="800" font-size="9" fill="#F8FAFC" text-anchor="middle" letter-spacing="1.5">SVBH</text>
+</svg>
