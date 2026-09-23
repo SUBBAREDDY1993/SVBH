@@ -76,7 +76,9 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `Please pay via UPI or Cash at the hostel office. Kindly share the screenshot to collect your receipt.\n\n` +
           `_If you have already paid, kindly ignore this message._\n\n` +
           `Have a great day ahead!\n` +
-          `- Sri Venkateswara Boys Hostel Management`
+          `- Sri Venkateswara Boys Hostel Management\n` +
+          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
+          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
       );
     } else if (templateType === 1) {
       // Evening Template
@@ -90,7 +92,9 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `Please ensure the payment is completed today to avoid any inconvenience.\n\n` +
           `_If already paid, please ignore this notice._\n\n` +
           `Thank you,\n` +
-          `- Sri Venkateswara Boys Hostel Management`
+          `- Sri Venkateswara Boys Hostel Management\n` +
+          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
+          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
       );
     } else {
       // Urgent / Overdue Notice Template
@@ -100,7 +104,10 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `Your hostel fee of *₹${rentStr}* for Room ${dueItem.roomNumber} (Bed ${dueItem.bedId}) is pending (Due Date: ${dueDateStr}).\n\n` +
           `Please clear your outstanding balance immediately at the office or via UPI to keep your accommodation active.\n\n` +
           `_Kindly ignore if payment is already in progress._\n\n` +
-          `Hostel Office Helpline: Sri Venkateswara Boys Hostel`
+          `Hostel Office Helpline:\n` +
+          `Sri Venkateswara Boys Hostel\n` +
+          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
+          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
       );
     }
   }, [dueItem, templateType]);

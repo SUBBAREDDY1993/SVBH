@@ -225,7 +225,9 @@ public class PaymentReminderService {
                 "💳 *Payment Options:*\n" +
                 "Please pay via UPI or Cash at the hostel office. After paying, please share the transaction screenshot to collect your receipt.\n\n" +
                 "_If you have already paid, kindly ignore this message._\n\n" +
-                "Thank you,\n*Sri Venkateswara Boys Hostel Management*",
+                "Thank you,\n*Sri Venkateswara Boys Hostel Management*\n" +
+                "📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n" +
+                "📞 Phone: +91 98765 43210 | ✉️ Email: svboyshostel.tirupati@gmail.com",
                 greeting,
                 student.getFullName(),
                 statusNotice,

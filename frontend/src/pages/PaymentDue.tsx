@@ -135,7 +135,9 @@ export const PaymentDue: React.FC = () => {
       `💳 *Payment Options:*\n` +
       `Please pay via UPI or Cash at the hostel office. Kindly share the transaction screenshot to collect your receipt.\n\n` +
       `_If already paid, kindly ignore this notice._\n\n` +
-      `Thank you,\n*Sri Venkateswara Boys Hostel Management*`;
+      `Thank you,\n*Sri Venkateswara Boys Hostel Management*\n` +
+      `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
+      `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`;
 
     try {
       await reminderService.recordManualReminder(item.studentId, 'WHATSAPP', message);
