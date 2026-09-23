@@ -135,6 +135,7 @@ public class PaymentService {
                         .overdue(true)
                         .daysOverdue(ChronoUnit.DAYS.between(s.getNextPaymentDueDate(), today))
                         .dueCategory("OVERDUE")
+                        .paymentStatus(s.getPaymentStatus() != null ? s.getPaymentStatus() : "PENDING")
                         .build())
                 .collect(Collectors.toList());
     }
@@ -159,6 +160,7 @@ public class PaymentService {
                         .overdue(false)
                         .daysOverdue(0)
                         .dueCategory("DUE_SOON")
+                        .paymentStatus(s.getPaymentStatus())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -182,6 +184,7 @@ public class PaymentService {
                         .overdue(false)
                         .daysOverdue(0)
                         .dueCategory("DUE_TODAY")
+                        .paymentStatus(s.getPaymentStatus())
                         .build())
                 .collect(Collectors.toList());
     }

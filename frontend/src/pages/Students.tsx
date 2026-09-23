@@ -33,11 +33,14 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ClearIcon from '@mui/icons-material/Clear';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { studentService } from '../services/studentService';
 import { reportService } from '../services/reportService';
-import { Student, StudentStatus } from '../types';
+import { reminderService } from '../services/reminderService';
+import { Student, StudentStatus, PaymentDue as PaymentDueType } from '../types';
 import { StatusChip } from '../components/StatusChip';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { PaymentReminderModal } from '../components/PaymentReminderModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -59,6 +62,11 @@ export const Students: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const { isAdmin } = useAuth();
+
+  // Fee Reminder Modal & Batch Trigger State
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [selectedDueItem, setSelectedDueItem] = useState<PaymentDueType | null>(null);
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
 
   // Delete Confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -140,6 +148,48 @@ export const Students: React.FC = () => {
     if (paymentFilter === 'PENDING') return isPending(s);
     return true;
   });
+
+  // Open individual fee reminder modal for existing student
+  const handleOpenReminder = (student: Student) => {
+    const status = getPaymentStatus(student);
+    const isOverdue = !!(student.isOverdue || (student.daysOverdue && student.daysOverdue > 0));
+    const daysOverdue = student.daysOverdue || 0;
+    const today = new Date().toISOString().split('T')[0];
+    const dueCategory = isOverdue
+      ? 'OVERDUE'
+      : student.nextPaymentDueDate === today
+      ? 'DUE_TODAY'
+      : 'DUE_SOON';
+
+    setSelectedDueItem({
+      studentId: student.studentId,
+      studentName: student.fullName,
+      mobileNumber: student.mobileNumber,
+      roomNumber: student.roomNumber || '',
+      bedId: String(student.bedNumber || student.bedId || ''),
+      bedNumber: typeof student.bedNumber === 'number' ? student.bedNumber : undefined,
+      monthlyRent: student.monthlyRent,
+      nextPaymentDueDate: student.nextPaymentDueDate || '',
+      overdue: isOverdue,
+      daysOverdue: daysOverdue,
+      dueCategory: dueCategory,
+      paymentStatus: status,
+    });
+    setReminderModalOpen(true);
+  };
+
+  // Trigger batch reminders for all students with pending fees or half-paid balances
+  const handleTriggerRemindersBatch = async () => {
+    try {
+      setIsBatchRunning(true);
+      const res = await reminderService.triggerBatch('MORNING', true);
+      showSuccess(res.message || 'Payment reminders sent successfully to all pending and half-paid residents!');
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to send batch payment reminders');
+    } finally {
+      setIsBatchRunning(false);
+    }
+  };
 
   // Security Confirmation State for Payment Status Changes
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
@@ -496,23 +546,50 @@ export const Students: React.FC = () => {
               )}
             </div>
 
-            {/* Filter indication */}
-            {paymentFilter !== 'ALL' && (
-              <div className="small fw-semibold text-muted">
-                Showing <strong>{displayedStudents.length}</strong> resident(s) with status:
-                <span
-                  className={`badge ms-1.5 px-2.5 py-1 rounded-pill ${
-                    paymentFilter === 'PAID'
-                      ? 'bg-success'
-                      : paymentFilter === 'HALF_PAID'
-                      ? 'bg-warning text-dark'
-                      : 'bg-danger'
-                  }`}
+            {/* Filter indication and Batch Reminders */}
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              {paymentFilter !== 'ALL' && (
+                <div className="small fw-semibold text-muted">
+                  Showing <strong>{displayedStudents.length}</strong> resident(s) with status:
+                  <span
+                    className={`badge ms-1.5 px-2.5 py-1 rounded-pill ${
+                      paymentFilter === 'PAID'
+                        ? 'bg-success'
+                        : paymentFilter === 'HALF_PAID'
+                        ? 'bg-warning text-dark'
+                        : 'bg-danger'
+                    }`}
+                  >
+                    {paymentFilter === 'PAID' ? '✓ PAID' : paymentFilter === 'HALF_PAID' ? '◐ HALF PAID' : '⚠ PENDING'}
+                  </span>
+                </div>
+              )}
+
+              {(pendingCount > 0 || halfPaidCount > 0) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold shadow-sm"
+                  disabled={isBatchRunning}
+                  onClick={handleTriggerRemindersBatch}
+                  title="Send reminders to all residents with pending or half-paid fees"
                 >
-                  {paymentFilter === 'PAID' ? '✓ PAID' : paymentFilter === 'HALF_PAID' ? '◐ HALF PAID' : '⚠ PENDING'}
-                </span>
-              </div>
-            )}
+                  {isBatchRunning ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                  ) : (
+                    <i className="bi bi-whatsapp"></i>
+                  )}
+                  <span>
+                    {isBatchRunning
+                      ? 'Sending...'
+                      : paymentFilter === 'HALF_PAID'
+                      ? `Send Reminders (${halfPaidCount} Half Paid)`
+                      : paymentFilter === 'PENDING'
+                      ? `Send Reminders (${pendingCount} Pending)`
+                      : `Send Reminders (${halfPaidCount + pendingCount} Due)`}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           <Grid container spacing={2} alignItems="center" component="form" onSubmit={handleSearchSubmit}>
@@ -879,6 +956,31 @@ export const Students: React.FC = () => {
                                 </Button>
                               )}
 
+                              {student.status !== 'VACATED' && (pending || halfPaid) && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<WhatsAppIcon fontSize="small" />}
+                                  onClick={() => handleOpenReminder(student)}
+                                  title={`Send fee reminder to ${student.fullName} (${halfPaid ? 'Half Paid Balance Due' : 'Fee Pending'}) via WhatsApp or SMS`}
+                                  sx={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    py: 0.4,
+                                    px: 1.2,
+                                    borderColor: halfPaid ? '#f59e0b' : '#ef4444',
+                                    color: halfPaid ? '#b45309' : '#dc2626',
+                                    bgcolor: halfPaid ? '#fffbeb' : '#fef2f2',
+                                    '&:hover': {
+                                      bgcolor: halfPaid ? '#fef3c7' : '#fee2e2',
+                                      borderColor: halfPaid ? '#d97706' : '#b91c1c',
+                                    },
+                                  }}
+                                >
+                                  Remind
+                                </Button>
+                              )}
+
                               {isAdmin && (
                                 <Button
                                   size="small"
@@ -968,6 +1070,16 @@ export const Students: React.FC = () => {
           setStatusConfirmOpen(false);
           setPendingStatusChange(null);
         }}
+      />
+
+      {/* Fee Payment Reminder Modal */}
+      <PaymentReminderModal
+        open={reminderModalOpen}
+        onClose={() => {
+          setReminderModalOpen(false);
+          setSelectedDueItem(null);
+        }}
+        dueItem={selectedDueItem}
       />
     </Box>
   );

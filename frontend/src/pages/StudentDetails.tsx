@@ -752,9 +752,10 @@ export const StudentDetails: React.FC = () => {
                 bedNumber: student.bedNumber,
                 monthlyRent: student.monthlyRent,
                 nextPaymentDueDate: student.nextPaymentDueDate || '',
-                overdue: false,
-                daysOverdue: 0,
-                dueCategory: 'DUE_SOON',
+                overdue: student.isOverdue || false,
+                daysOverdue: student.daysOverdue || 0,
+                dueCategory: student.isOverdue ? 'OVERDUE' : 'DUE_SOON',
+                paymentStatus: (student.paymentStatus as 'PAID' | 'HALF_PAID' | 'PENDING') || (student.isOverdue ? 'PENDING' : 'PAID'),
               }
             : null
         }

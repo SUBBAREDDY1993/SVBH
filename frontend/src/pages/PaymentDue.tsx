@@ -114,15 +114,20 @@ export const PaymentDue: React.FC = () => {
     const daysOverdue = item.daysOverdue || 0;
     const isOverdue = item.overdue || daysOverdue > 0;
     const dueDateStr = item.nextPaymentDueDate || 'N/A';
-    const rentStr = item.monthlyRent?.toLocaleString('en-IN') || '0';
+    const isHalfPaid = item.paymentStatus === 'HALF_PAID';
+    const amountDue = isHalfPaid ? Math.round((item.monthlyRent || 0) / 2) : (item.monthlyRent || 0);
+    const amountStr = amountDue.toLocaleString('en-IN');
+    const totalRentStr = (item.monthlyRent || 0).toLocaleString('en-IN');
 
     let statusLine = '';
-    if (isOverdue) {
+    if (isHalfPaid) {
+      statusLine = `you have paid partial fee, and your remaining *HALF FEE BALANCE of ₹${amountStr} is PENDING* (Due date: ${dueDateStr})`;
+    } else if (isOverdue) {
       statusLine = `your monthly hostel rent is *${daysOverdue} days OVERDUE* (Due date: ${dueDateStr})`;
     } else if (daysOverdue === 0 && item.dueCategory === 'DUE_TODAY') {
       statusLine = `your monthly hostel rent is *DUE TODAY* (${dueDateStr})`;
     } else {
-      statusLine = `your monthly hostel rent of ₹${rentStr} is *due soon on ${dueDateStr}*`;
+      statusLine = `your monthly hostel rent of ₹${amountStr} is *due soon on ${dueDateStr}*`;
     }
 
     const message =
@@ -130,7 +135,8 @@ export const PaymentDue: React.FC = () => {
       `Hello ${item.studentName},\n\n` +
       `This is a friendly reminder that ${statusLine}.\n\n` +
       `🏠 *Room & Bed:* Room ${item.roomNumber} (Bed ${item.bedId})\n` +
-      `💰 *Amount Due:* ₹${rentStr}\n` +
+      (isHalfPaid ? `💰 *Total Monthly Rent:* ₹${totalRentStr}\n` : '') +
+      `💳 *${isHalfPaid ? 'Remaining Balance Pending' : 'Amount Due'}:* ₹${amountStr}\n` +
       `📅 *Due Date:* ${dueDateStr}\n\n` +
       `💳 *Payment Options:*\n` +
       `Please pay via UPI or Cash at the hostel office. Kindly share the transaction screenshot to collect your receipt.\n\n` +

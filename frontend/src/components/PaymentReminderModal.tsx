@@ -49,18 +49,23 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
   useEffect(() => {
     if (!dueItem) return;
 
+    const isHalfPaid = dueItem.paymentStatus === 'HALF_PAID';
     const daysOverdue = dueItem.daysOverdue || 0;
     const isOverdue = dueItem.overdue || daysOverdue > 0;
     const dueDateStr = dueItem.nextPaymentDueDate || 'N/A';
-    const rentStr = dueItem.monthlyRent?.toLocaleString('en-IN') || '0';
+    const amountDue = isHalfPaid ? Math.round((dueItem.monthlyRent || 0) / 2) : (dueItem.monthlyRent || 0);
+    const amountStr = amountDue.toLocaleString('en-IN');
+    const totalRentStr = (dueItem.monthlyRent || 0).toLocaleString('en-IN');
 
     let statusLine = '';
-    if (isOverdue) {
-      statusLine = `your monthly hostel rent is *${daysOverdue} days OVERDUE* (Due date: ${dueDateStr})`;
+    if (isHalfPaid) {
+      statusLine = `you have paid partial fee, and your remaining *HALF FEE BALANCE of ₹${amountStr} is PENDING* (Due date: ${dueDateStr})`;
+    } else if (isOverdue) {
+      statusLine = `your monthly hostel rent of ₹${amountStr} is *${daysOverdue} days OVERDUE and PENDING* (Due date: ${dueDateStr})`;
     } else if (daysOverdue === 0 && dueItem.dueCategory === 'DUE_TODAY') {
-      statusLine = `your monthly hostel rent is *DUE TODAY* (${dueDateStr})`;
+      statusLine = `your monthly hostel rent of ₹${amountStr} is *DUE TODAY* (${dueDateStr})`;
     } else {
-      statusLine = `your monthly hostel rent of ₹${rentStr} is *due soon on ${dueDateStr}*`;
+      statusLine = `your monthly hostel rent of ₹${amountStr} is *due soon on ${dueDateStr}*`;
     }
 
     if (templateType === 0) {
@@ -70,7 +75,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `Good morning ${dueItem.studentName},\n\n` +
           `This is a gentle morning reminder that ${statusLine}.\n\n` +
           `🏠 *Room & Bed:* Room ${dueItem.roomNumber} (Bed ${dueItem.bedId})\n` +
-          `💰 *Amount Due:* ₹${rentStr}\n` +
+          (isHalfPaid ? `💰 *Total Monthly Rent:* ₹${totalRentStr}\n` : '') +
+          `💳 *${isHalfPaid ? 'Remaining Balance Pending' : 'Amount Due'}:* ₹${amountStr}\n` +
           `📅 *Due Date:* ${dueDateStr}\n\n` +
           `💳 *Payment Options:*\n` +
           `Please pay via UPI or Cash at the hostel office. Kindly share the screenshot to collect your receipt.\n\n` +
@@ -87,7 +93,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `Good evening ${dueItem.studentName},\n\n` +
           `Following up on your hostel accommodation fee: ${statusLine}.\n\n` +
           `🏠 *Room & Bed:* Room ${dueItem.roomNumber} (Bed ${dueItem.bedId})\n` +
-          `💰 *Amount Due:* ₹${rentStr}\n` +
+          (isHalfPaid ? `💰 *Total Monthly Rent:* ₹${totalRentStr}\n` : '') +
+          `💳 *${isHalfPaid ? 'Remaining Balance Pending' : 'Amount Due'}:* ₹${amountStr}\n` +
           `📅 *Due Date:* ${dueDateStr}\n\n` +
           `Please ensure the payment is completed today to avoid any inconvenience.\n\n` +
           `_If already paid, please ignore this notice._\n\n` +
@@ -99,10 +106,12 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
     } else {
       // Urgent / Overdue Notice Template
       setCustomMessage(
-        `⚠️ *IMPORTANT NOTICE: Hostel Fee Overdue*\n\n` +
+        `⚠️ *IMPORTANT NOTICE: Hostel Fee ${isHalfPaid ? 'Balance Pending' : 'Overdue / Pending'}*\n\n` +
           `Dear ${dueItem.studentName},\n\n` +
-          `Your hostel fee of *₹${rentStr}* for Room ${dueItem.roomNumber} (Bed ${dueItem.bedId}) is pending (Due Date: ${dueDateStr}).\n\n` +
-          `Please clear your outstanding balance immediately at the office or via UPI to keep your accommodation active.\n\n` +
+          (isHalfPaid
+            ? `Your remaining half fee balance of *₹${amountStr}* (Total Rent: ₹${totalRentStr}) for Room ${dueItem.roomNumber} (Bed ${dueItem.bedId}) is currently pending to be cleared (Due Date: ${dueDateStr}).\n\n`
+            : `Your monthly hostel fee of *₹${amountStr}* for Room ${dueItem.roomNumber} (Bed ${dueItem.bedId}) is pending (Due Date: ${dueDateStr}).\n\n`) +
+          `Please clear your outstanding dues immediately at the hostel office or via UPI to keep your accommodation active.\n\n` +
           `_Kindly ignore if payment is already in progress._\n\n` +
           `Hostel Office Helpline:\n` +
           `Sri Venkateswara Boys Hostel\n` +
@@ -236,24 +245,29 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           </Box>
 
           <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#dc2626', lineHeight: 1.1 }}>
-              ₹{dueItem.monthlyRent?.toLocaleString('en-IN')}
+            <Typography variant="h6" sx={{ fontWeight: 800, color: dueItem.paymentStatus === 'HALF_PAID' ? '#b45309' : '#dc2626', lineHeight: 1.1 }}>
+              ₹{(dueItem.paymentStatus === 'HALF_PAID' ? Math.round((dueItem.monthlyRent || 0) / 2) : (dueItem.monthlyRent || 0)).toLocaleString('en-IN')}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.7rem', fontWeight: 600 }}>
+              {dueItem.paymentStatus === 'HALF_PAID' ? '50% Balance Pending' : 'Monthly Fee'}
             </Typography>
             <Chip
               label={
-                dueItem.overdue
+                dueItem.paymentStatus === 'HALF_PAID'
+                  ? '🟡 Half Paid (Balance Due)'
+                  : dueItem.overdue
                   ? `${dueItem.daysOverdue}d Overdue`
                   : dueItem.dueCategory === 'DUE_TODAY'
                   ? 'Due Today'
-                  : 'Due in 3d'
+                  : 'Pending Due'
               }
               size="small"
               sx={{
                 mt: 0.5,
                 fontWeight: 700,
                 fontSize: '0.72rem',
-                bgcolor: dueItem.overdue ? '#fee2e2' : '#fef3c7',
-                color: dueItem.overdue ? '#b91c1c' : '#b45309',
+                bgcolor: dueItem.paymentStatus === 'HALF_PAID' ? '#fef3c7' : dueItem.overdue ? '#fee2e2' : '#fef2f2',
+                color: dueItem.paymentStatus === 'HALF_PAID' ? '#b45309' : dueItem.overdue ? '#b91c1c' : '#dc2626',
               }}
             />
           </Box>

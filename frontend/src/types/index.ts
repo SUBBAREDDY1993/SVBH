@@ -252,6 +252,7 @@ export interface PaymentDue {
   overdue: boolean;
   daysOverdue: number;
   dueCategory: 'DUE_TODAY' | 'DUE_SOON' | 'OVERDUE';
+  paymentStatus?: 'PAID' | 'HALF_PAID' | 'PENDING';
 }
 
 export interface DashboardStats {

@@ -24,4 +24,5 @@ public class PaymentDueDto {
     private boolean overdue;
     private long daysOverdue;
     private String dueCategory; // DUE_TODAY, DUE_SOON, OVERDUE
+    private String paymentStatus; // PAID, HALF_PAID, PENDING
 }

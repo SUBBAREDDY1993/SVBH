@@ -66,10 +66,16 @@ public class PaymentReminderService {
         LocalDate today = LocalDate.now();
         LocalDate maxDueDate = today.plusDays(3); // 3 days nearby reminder window
 
-        // Retrieve active students whose next payment due date is on or before today + 3 days
-        List<Student> eligibleStudents = studentRepository.findOverdueStudents(maxDueDate)
+        // Retrieve active students who have HALF_PAID or PENDING status, or due within 3 days or overdue
+        List<Student> eligibleStudents = studentRepository.findAll()
                 .stream()
-                .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null)
+                .filter(s -> s.getStatus() != StudentStatus.VACATED)
+                .filter(s -> {
+                    if ("HALF_PAID".equalsIgnoreCase(s.getPaymentStatus())) return true;
+                    if ("PENDING".equalsIgnoreCase(s.getPaymentStatus())) return true;
+                    if (s.getNextPaymentDueDate() == null) return true;
+                    return !s.getNextPaymentDueDate().isAfter(maxDueDate);
+                })
                 .collect(Collectors.toList());
 
         List<PaymentReminderDto> processedReminders = new ArrayList<>();
@@ -84,8 +90,15 @@ public class PaymentReminderService {
                 continue;
             }
 
-            long daysUntilDue = ChronoUnit.DAYS.between(today, student.getNextPaymentDueDate());
+            long daysUntilDue = student.getNextPaymentDueDate() != null
+                    ? ChronoUnit.DAYS.between(today, student.getNextPaymentDueDate())
+                    : 0;
             String message = generateReminderMessage(student, slot, daysUntilDue);
+
+            double logAmount = student.getMonthlyRent() != null ? student.getMonthlyRent() : 0.0;
+            if ("HALF_PAID".equalsIgnoreCase(student.getPaymentStatus())) {
+                logAmount = logAmount / 2.0;
+            }
 
             PaymentReminderLog logEntry = PaymentReminderLog.builder()
                     .studentId(studentId)
@@ -93,7 +106,7 @@ public class PaymentReminderService {
                     .mobileNumber(student.getMobileNumber())
                     .roomNumber(student.getRoomNumber())
                     .bedId(student.getBedId())
-                    .amountDue(student.getMonthlyRent())
+                    .amountDue(logAmount)
                     .nextPaymentDueDate(student.getNextPaymentDueDate())
                     .daysUntilDue(daysUntilDue)
                     .reminderSlot(slot)
@@ -205,13 +218,24 @@ public class PaymentReminderService {
                 : "N/A";
 
         String statusNotice;
-        if (daysUntilDue < 0) {
-            statusNotice = String.format("your monthly rent is *%d days OVERDUE* (Due date: %s)",
-                    Math.abs(daysUntilDue), dueDateStr);
+        double amountToPay = student.getMonthlyRent() != null ? student.getMonthlyRent() : 0.0;
+        if ("HALF_PAID".equalsIgnoreCase(student.getPaymentStatus())) {
+            double halfAmount = amountToPay / 2.0;
+            statusNotice = String.format("you have paid partial fee, and your remaining *HALF FEE BALANCE of ₹%.0f is PENDING* to be cleared (Due date: %s)",
+                    halfAmount, dueDateStr);
+            amountToPay = halfAmount;
+        } else if (daysUntilDue < 0 || "PENDING".equalsIgnoreCase(student.getPaymentStatus())) {
+            long overdueDays = daysUntilDue < 0 ? Math.abs(daysUntilDue) : 0;
+            if (overdueDays > 0) {
+                statusNotice = String.format("your monthly hostel rent is *%d days OVERDUE and PENDING* (Due date: %s)",
+                        overdueDays, dueDateStr);
+            } else {
+                statusNotice = String.format("your monthly hostel rent is *PENDING / DUE* (Due date: %s)", dueDateStr);
+            }
         } else if (daysUntilDue == 0) {
-            statusNotice = String.format("your monthly rent is *DUE TODAY* (%s)", dueDateStr);
+            statusNotice = String.format("your monthly hostel rent is *DUE TODAY* (%s)", dueDateStr);
         } else {
-            statusNotice = String.format("your monthly rent is *due in %d day%s* on %s",
+            statusNotice = String.format("your monthly hostel rent is *due in %d day%s* on %s",
                     daysUntilDue, daysUntilDue == 1 ? "" : "s", dueDateStr);
         }
 
@@ -233,7 +257,7 @@ public class PaymentReminderService {
                 statusNotice,
                 student.getRoomNumber() != null ? student.getRoomNumber() : "-",
                 student.getBedId() != null ? student.getBedId() : "-",
-                student.getMonthlyRent() != null ? student.getMonthlyRent() : 0.0,
+                amountToPay,
                 dueDateStr
         );
     }
