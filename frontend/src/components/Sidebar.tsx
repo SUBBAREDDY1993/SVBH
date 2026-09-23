@@ -20,6 +20,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,6 +39,7 @@ const navItems = [
   { text: 'Payment Due', path: '/payments/due', icon: <ScheduleIcon /> },
   { text: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
   { text: 'Notifications', path: '/notifications', icon: <NotificationsIcon /> },
+  { text: 'Handbook', path: '/handbook', icon: <MenuBookIcon /> },
   { text: 'Settings', path: '/settings', icon: <SettingsIcon />, adminOnly: true },
 ];
 

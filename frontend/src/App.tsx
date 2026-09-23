@@ -23,6 +23,7 @@ import { PaymentReceipt } from './pages/PaymentReceipt';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { Notifications } from './pages/Notifications';
+import { Handbook } from './pages/Handbook';
 
 const App: React.FC = () => {
   return (
@@ -53,6 +54,7 @@ const App: React.FC = () => {
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/handbook" element={<Handbook />} />
                   </Route>
                 </Route>
 

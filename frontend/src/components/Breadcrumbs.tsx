@@ -16,6 +16,7 @@ const routeNameMap: Record<string, string> = {
   reports: 'Reports & Analytics',
   notifications: 'Notifications',
   settings: 'System Settings',
+  handbook: 'Operations Handbook',
 };
 
 export const Breadcrumbs: React.FC = () => {
