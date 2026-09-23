@@ -83,7 +83,8 @@ public class StudentController {
     }
 
     @RequestMapping(value = "/{id}/payment-status", method = {RequestMethod.PATCH, RequestMethod.PUT})
-    @Operation(summary = "Update resident fee payment status (PAID, PENDING, HALF_PAID)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Update resident fee payment status (PAID, PENDING, HALF_PAID) - Requires ADMIN or STAFF role")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updatePaymentStatus(
             @PathVariable String id,
             @RequestParam String status) {

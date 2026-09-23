@@ -5,14 +5,17 @@ export const authService = {
   async login(username: string, password: string): Promise<AuthResponse> {
     const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', { username, password });
     if (response.data.data) {
-      localStorage.setItem('svbh_token', response.data.data.token);
-      localStorage.setItem('svbh_user', JSON.stringify({
+      sessionStorage.setItem('svbh_token', response.data.data.token);
+      sessionStorage.setItem('svbh_user', JSON.stringify({
         id: response.data.data.userId,
         username: response.data.data.username,
         fullName: response.data.data.fullName,
         email: response.data.data.email,
         role: response.data.data.role,
       }));
+      // Clean up legacy localStorage so authentication is strictly session-based
+      localStorage.removeItem('svbh_token');
+      localStorage.removeItem('svbh_user');
       return response.data.data;
     }
     throw new Error(response.data.message || 'Login failed');
@@ -31,13 +34,15 @@ export const authService = {
   },
 
   logout(): void {
+    sessionStorage.removeItem('svbh_token');
+    sessionStorage.removeItem('svbh_user');
     localStorage.removeItem('svbh_token');
     localStorage.removeItem('svbh_user');
     window.location.href = '/login';
   },
 
   getStoredUser(): Partial<User> | null {
-    const userStr = localStorage.getItem('svbh_user');
+    const userStr = sessionStorage.getItem('svbh_user');
     if (!userStr) return null;
     try {
       return JSON.parse(userStr);
@@ -47,6 +52,6 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('svbh_token');
+    return !!sessionStorage.getItem('svbh_token');
   },
 };

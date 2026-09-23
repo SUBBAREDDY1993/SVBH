@@ -10,7 +10,7 @@ const api = axios.create({
 // Request interceptor: add JWT Bearer token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('svbh_token');
+    const token = sessionStorage.getItem('svbh_token') || localStorage.getItem('svbh_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,6 +26,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // If unauthorized and not already on login page, clear token and redirect
       if (window.location.pathname !== '/login') {
+        sessionStorage.removeItem('svbh_token');
+        sessionStorage.removeItem('svbh_user');
         localStorage.removeItem('svbh_token');
         localStorage.removeItem('svbh_user');
         window.location.href = '/login';

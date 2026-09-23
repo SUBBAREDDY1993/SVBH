@@ -316,6 +316,7 @@ public class StudentService {
             throw new IllegalArgumentException("Invalid payment status: " + status + ". Allowed values: PAID, PENDING, HALF_PAID");
         }
 
+        String previousStatus = student.getPaymentStatus();
         student.setPaymentStatus(normalizedStatus);
         if ("PAID".equalsIgnoreCase(normalizedStatus)) {
             student.setLastPaymentDate(LocalDate.now());
@@ -325,7 +326,12 @@ public class StudentService {
         }
         student.setUpdatedAt(LocalDateTime.now());
         Student saved = studentRepository.save(student);
-        auditService.log("PAYMENT_STATUS_UPDATE", "STUDENT", saved.getStudentId(), "Updated payment status to " + normalizedStatus);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actor = auth != null && auth.getName() != null ? auth.getName() : "ADMIN";
+        auditService.log("PAYMENT_STATUS_UPDATE", "STUDENT", saved.getStudentId(),
+                String.format("Security: Fee status changed from '%s' to '%s' by user '%s'",
+                        previousStatus != null ? previousStatus : "AUTO_CALCULATED", normalizedStatus, actor));
         return toStudentResponseDto(saved);
     }
 

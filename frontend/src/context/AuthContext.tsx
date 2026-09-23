@@ -19,16 +19,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
+      // Clear legacy localStorage tokens so authentication is required whenever the application is opened
+      localStorage.removeItem('svbh_token');
+      localStorage.removeItem('svbh_user');
+
+      const token = sessionStorage.getItem('svbh_token');
       const storedUser = authService.getStoredUser();
-      const token = localStorage.getItem('svbh_token');
-      if (storedUser && token) {
+
+      if (token && storedUser) {
         try {
           const freshUser = await authService.getCurrentUser();
           setUser(freshUser);
         } catch (err) {
           console.warn('Session expired or invalid, redirecting to login:', err);
-          localStorage.removeItem('svbh_token');
-          localStorage.removeItem('svbh_user');
+          authService.logout();
           setUser(null);
         }
       } else {

@@ -141,10 +141,35 @@ export const Students: React.FC = () => {
     return true;
   });
 
-  const handlePaymentStatusChange = async (student: Student, newStatus: 'PAID' | 'HALF_PAID' | 'PENDING') => {
+  // Security Confirmation State for Payment Status Changes
+  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    student: Student;
+    newStatus: 'PAID' | 'HALF_PAID' | 'PENDING';
+    oldStatus: 'PAID' | 'HALF_PAID' | 'PENDING';
+  } | null>(null);
+
+  const initiatePaymentStatusChange = (student: Student, newStatus: 'PAID' | 'HALF_PAID' | 'PENDING') => {
     const currentStatus = getPaymentStatus(student);
     if (currentStatus === newStatus) return;
 
+    if (!isAdmin) {
+      showError('Security: Only administrators have permission to alter resident fee payment status.');
+      return;
+    }
+
+    setPendingStatusChange({
+      student,
+      newStatus,
+      oldStatus: currentStatus,
+    });
+    setStatusConfirmOpen(true);
+  };
+
+  const confirmPaymentStatusChange = async () => {
+    if (!pendingStatusChange) return;
+    const { student, newStatus } = pendingStatusChange;
+    setStatusConfirmOpen(false);
     setUpdatingStudentId(student.studentId);
 
     // Optimistically update local UI state immediately
@@ -162,7 +187,7 @@ export const Students: React.FC = () => {
     try {
       const updated = await studentService.updatePaymentStatus(student.id || student.studentId, newStatus);
       const label = newStatus === 'PAID' ? 'Paid' : newStatus === 'HALF_PAID' ? 'Half Paid' : 'Pending';
-      showSuccess(`Payment status for ${student.fullName} updated to ${label}`);
+      showSuccess(`[Security Verified] Fee status for ${student.fullName} (${student.studentId}) updated to ${label}`);
       if (updated) {
         setStudents((prev) => prev.map((s) => (s.studentId === updated.studentId ? { ...s, ...updated } : s)));
         setAllStudents((prev) => prev.map((s) => (s.studentId === updated.studentId ? { ...s, ...updated } : s)));
@@ -172,6 +197,7 @@ export const Students: React.FC = () => {
       loadStudents(); // revert on failure
     } finally {
       setUpdatingStudentId(null);
+      setPendingStatusChange(null);
     }
   };
 
@@ -765,10 +791,11 @@ export const Students: React.FC = () => {
                             <div className="position-relative d-inline-flex align-items-center">
                               <select
                                 aria-label="Payment Status"
-                                disabled={updatingStudentId === student.studentId}
+                                disabled={!isAdmin || updatingStudentId === student.studentId}
+                                title={!isAdmin ? 'Administrator privileges required to change fee status' : 'Change payment status (Requires confirmation)'}
                                 value={currentPaymentStatus}
                                 onChange={(e) =>
-                                  handlePaymentStatusChange(
+                                  initiatePaymentStatusChange(
                                     student,
                                     e.target.value as 'PAID' | 'HALF_PAID' | 'PENDING'
                                   )
@@ -781,7 +808,8 @@ export const Students: React.FC = () => {
                                     : 'bg-danger-subtle text-danger border-danger'
                                 }`}
                                 style={{
-                                  cursor: updatingStudentId === student.studentId ? 'wait' : 'pointer',
+                                  cursor: !isAdmin ? 'not-allowed' : updatingStudentId === student.studentId ? 'wait' : 'pointer',
+                                  opacity: !isAdmin ? 0.75 : 1,
                                   minWidth: '135px',
                                   fontSize: '0.78rem',
                                   paddingTop: '0.35rem',
@@ -907,6 +935,38 @@ export const Students: React.FC = () => {
         onCancel={() => {
           setDeleteDialogOpen(false);
           setStudentToDelete(null);
+        }}
+      />
+
+      {/* Security Confirmation Dialog for Payment Status Change */}
+      <ConfirmationDialog
+        open={statusConfirmOpen}
+        title="Security Confirmation: Change Fee Status"
+        message={
+          pendingStatusChange
+            ? `Are you sure you want to update the payment status for ${pendingStatusChange.student.fullName} (${pendingStatusChange.student.studentId}, Room ${pendingStatusChange.student.roomNumber || 'N/A'}) from ${pendingStatusChange.oldStatus} to ${pendingStatusChange.newStatus}? ${
+                pendingStatusChange.newStatus === 'PAID'
+                  ? 'This will record the fee as fully paid and advance their next due date by 1 month.'
+                  : pendingStatusChange.newStatus === 'HALF_PAID'
+                  ? 'This will record partial fee payment received.'
+                  : 'This will flag this resident with pending fee dues.'
+              }`
+            : ''
+        }
+        confirmText="Yes, Update Status"
+        cancelText="Cancel"
+        confirmColor={
+          pendingStatusChange?.newStatus === 'PAID'
+            ? 'primary'
+            : pendingStatusChange?.newStatus === 'HALF_PAID'
+            ? 'warning'
+            : 'error'
+        }
+        isLoading={!!updatingStudentId}
+        onConfirm={confirmPaymentStatusChange}
+        onCancel={() => {
+          setStatusConfirmOpen(false);
+          setPendingStatusChange(null);
         }}
       />
     </Box>
