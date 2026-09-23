@@ -280,7 +280,7 @@ export const StudentDetails: React.FC = () => {
                 </Typography>
                 <StatusChip status={student.status} size="medium" />
                 {student.status !== 'VACATED' && (
-                  (student.paymentStatus === 'PENDING' || student.isOverdue) ? (
+                  (student.paymentStatus === 'PENDING' || student.isOverdue || !student.nextPaymentDueDate || student.nextPaymentDueDate <= new Date().toISOString().split('T')[0]) ? (
                     <span className="badge badge-soft-danger d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold">
                       <i className="bi bi-clock-history text-danger"></i> FEE PENDING
                     </span>

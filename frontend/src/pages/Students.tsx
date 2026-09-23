@@ -113,11 +113,9 @@ export const Students: React.FC = () => {
     if (s.status === 'VACATED') return false;
     if (s.paymentStatus === 'PENDING') return true;
     if (s.isOverdue) return true;
-    if (s.nextPaymentDueDate) {
-      const today = new Date().toISOString().split('T')[0];
-      return s.nextPaymentDueDate < today;
-    }
-    return false;
+    if (!s.nextPaymentDueDate) return true;
+    const today = new Date().toISOString().split('T')[0];
+    return s.nextPaymentDueDate <= today;
   };
 
   const isPaid = (s: Student): boolean => {
