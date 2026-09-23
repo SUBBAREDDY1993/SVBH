@@ -31,6 +31,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PeopleIcon from '@mui/icons-material/People';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ClearIcon from '@mui/icons-material/Clear';
 import { studentService } from '../services/studentService';
 import { reportService } from '../services/reportService';
@@ -50,9 +51,10 @@ export const Students: React.FC = () => {
 
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<StudentStatus | ''>('');
-  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
+  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'PAID' | 'HALF_PAID' | 'PENDING'>('ALL');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [updatingStudentId, setUpdatingStudentId] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
@@ -109,32 +111,69 @@ export const Students: React.FC = () => {
   };
 
   // Payment status calculation helpers
-  const isPending = (s: Student): boolean => {
-    if (s.status === 'VACATED') return false;
-    if (s.paymentStatus === 'PENDING') return true;
-    if (s.isOverdue) return true;
-    if (!s.nextPaymentDueDate) return true;
+  const getPaymentStatus = (s: Student): 'PAID' | 'HALF_PAID' | 'PENDING' => {
+    if (s.status === 'VACATED') return 'PAID';
+    if (s.paymentStatus === 'PAID') return 'PAID';
+    if (s.paymentStatus === 'HALF_PAID') return 'HALF_PAID';
+    if (s.paymentStatus === 'PENDING') return 'PENDING';
+    if (s.isOverdue) return 'PENDING';
+    if (!s.nextPaymentDueDate) return 'PENDING';
     const today = new Date().toISOString().split('T')[0];
-    return s.nextPaymentDueDate <= today;
+    return s.nextPaymentDueDate <= today ? 'PENDING' : 'PAID';
   };
 
-  const isPaid = (s: Student): boolean => {
-    if (s.status === 'VACATED') return true;
-    return !isPending(s);
-  };
+  const isPending = (s: Student): boolean => getPaymentStatus(s) === 'PENDING';
+  const isPaid = (s: Student): boolean => getPaymentStatus(s) === 'PAID';
+  const isHalfPaid = (s: Student): boolean => getPaymentStatus(s) === 'HALF_PAID';
 
   // KPI calculations based on all students
   const totalCount = allStudents.length;
   const activeCount = allStudents.filter((s) => s.status === 'ACTIVE').length;
   const paidCount = allStudents.filter(isPaid).length;
+  const halfPaidCount = allStudents.filter(isHalfPaid).length;
   const pendingCount = allStudents.filter(isPending).length;
 
   // Filter students based on payment status toggle button
   const displayedStudents = students.filter((s) => {
     if (paymentFilter === 'PAID') return isPaid(s);
+    if (paymentFilter === 'HALF_PAID') return isHalfPaid(s);
     if (paymentFilter === 'PENDING') return isPending(s);
     return true;
   });
+
+  const handlePaymentStatusChange = async (student: Student, newStatus: 'PAID' | 'HALF_PAID' | 'PENDING') => {
+    const currentStatus = getPaymentStatus(student);
+    if (currentStatus === newStatus) return;
+
+    setUpdatingStudentId(student.studentId);
+
+    // Optimistically update local UI state immediately
+    const updater = (list: Student[]) =>
+      list.map((s) => {
+        if (s.studentId === student.studentId || (s.id && s.id === student.id)) {
+          return { ...s, paymentStatus: newStatus };
+        }
+        return s;
+      });
+
+    setStudents(updater);
+    setAllStudents(updater);
+
+    try {
+      const updated = await studentService.updatePaymentStatus(student.id || student.studentId, newStatus);
+      const label = newStatus === 'PAID' ? 'Paid' : newStatus === 'HALF_PAID' ? 'Half Paid' : 'Pending';
+      showSuccess(`Payment status for ${student.fullName} updated to ${label}`);
+      if (updated) {
+        setStudents((prev) => prev.map((s) => (s.studentId === updated.studentId ? { ...s, ...updated } : s)));
+        setAllStudents((prev) => prev.map((s) => (s.studentId === updated.studentId ? { ...s, ...updated } : s)));
+      }
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to update payment status');
+      loadStudents(); // revert on failure
+    } finally {
+      setUpdatingStudentId(null);
+    }
+  };
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -179,10 +218,10 @@ export const Students: React.FC = () => {
         </Box>
       </Box>
 
-      {/* KPI Metric Cards (Total, Active, Fee Paid, Fee Pending) */}
-      <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+      {/* KPI Metric Cards (Total, Active, Fee Paid, Half Paid, Fee Pending) */}
+      <Grid container spacing={2} sx={{ mb: 3.5 }}>
         {/* Total Enrolled */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <Card
             className="pro-card"
             onClick={() => {
@@ -196,14 +235,14 @@ export const Students: React.FC = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Total Enrolled
                 </Typography>
-                <PeopleIcon sx={{ color: '#2563eb', fontSize: 22 }} />
+                <PeopleIcon sx={{ color: '#2563eb', fontSize: 20 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#0f172a' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.8, color: '#0f172a' }}>
                 {totalCount}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
@@ -214,7 +253,7 @@ export const Students: React.FC = () => {
         </Grid>
 
         {/* Active Residents */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <Card
             className="pro-card"
             onClick={() => {
@@ -228,14 +267,14 @@ export const Students: React.FC = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Active Residents
                 </Typography>
-                <PeopleIcon sx={{ color: '#3b82f6', fontSize: 22 }} />
+                <PeopleIcon sx={{ color: '#3b82f6', fontSize: 20 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#1e40af' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.8, color: '#1e40af' }}>
                 {activeCount}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
@@ -246,7 +285,7 @@ export const Students: React.FC = () => {
         </Grid>
 
         {/* Fee Paid Button Card */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <Card
             className="pro-card"
             onClick={() => {
@@ -261,25 +300,58 @@ export const Students: React.FC = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Fee Paid (Done)
+                  Fee Paid
                 </Typography>
-                <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: 22 }} />
+                <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: 20 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#047857' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.8, color: '#047857' }}>
                 {paidCount}
               </Typography>
               <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>
-                {paymentFilter === 'PAID' ? '✓ Filter Active (Paid Only)' : 'Click to show paid residents'}
+                {paymentFilter === 'PAID' ? '✓ Filter Active (Paid)' : 'Show paid residents'}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Fee Half Paid Button Card */}
+        <Grid item xs={12} sm={6} md={2.4}>
+          <Card
+            className="pro-card"
+            onClick={() => {
+              setPaymentFilter(paymentFilter === 'HALF_PAID' ? 'ALL' : 'HALF_PAID');
+              setPage(0);
+            }}
+            sx={{
+              cursor: 'pointer',
+              borderTop: paymentFilter === 'HALF_PAID' ? '4px solid #f59e0b' : '4px solid transparent',
+              bgcolor: paymentFilter === 'HALF_PAID' ? '#fffbeb' : '#ffffff',
+              boxShadow: paymentFilter === 'HALF_PAID' ? '0 8px 20px -4px rgba(245, 158, 11, 0.2)' : undefined,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Half Paid
+                </Typography>
+                <AccessTimeIcon sx={{ color: '#f59e0b', fontSize: 20 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.8, color: '#b45309' }}>
+                {halfPaidCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 600 }}>
+                {paymentFilter === 'HALF_PAID' ? '◐ Filter Active (Half Paid)' : 'Show half paid dues'}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         {/* Fee Pending Button Card */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <Card
             className="pro-card"
             onClick={() => {
@@ -294,28 +366,28 @@ export const Students: React.FC = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Fee Pending
                 </Typography>
-                <ErrorOutlineIcon sx={{ color: '#ef4444', fontSize: 22 }} />
+                <ErrorOutlineIcon sx={{ color: '#ef4444', fontSize: 20 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#dc2626' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.8, color: '#dc2626' }}>
                 {pendingCount}
               </Typography>
               <Typography variant="caption" sx={{ color: '#dc2626', fontWeight: 600 }}>
-                {paymentFilter === 'PENDING' ? '⚠ Filter Active (Pending Only)' : 'Click to show pending dues'}
+                {paymentFilter === 'PENDING' ? '⚠ Filter Active (Pending)' : 'Show pending dues'}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Filter and Search Bar with the 2 Status Buttons */}
+      {/* Filter and Search Bar with the 3 Status Buttons */}
       <Card className="pro-card" sx={{ mb: 3 }}>
         <CardContent sx={{ p: 2.5 }}>
-          {/* Dedicated 2 Status Buttons Toolbar */}
+          {/* Dedicated Status Buttons Toolbar */}
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-3 mb-3 border-bottom">
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <span className="text-muted fw-bold small text-uppercase me-1">
@@ -342,7 +414,27 @@ export const Students: React.FC = () => {
                 </span>
               </button>
 
-              {/* Button 2: Fee Pending */}
+              {/* Button 2: Half Paid */}
+              <button
+                type="button"
+                className={`btn btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold transition-all shadow-2xs ${
+                  paymentFilter === 'HALF_PAID'
+                    ? 'btn-warning text-dark shadow-sm'
+                    : 'btn-outline-warning bg-white text-warning-emphasis'
+                }`}
+                onClick={() => {
+                  setPaymentFilter(paymentFilter === 'HALF_PAID' ? 'ALL' : 'HALF_PAID');
+                  setPage(0);
+                }}
+              >
+                <i className="bi bi-pie-chart-fill"></i>
+                <span>Half Paid</span>
+                <span className={`badge ${paymentFilter === 'HALF_PAID' ? 'bg-dark text-white' : 'bg-warning text-dark'} rounded-pill ms-1`}>
+                  {halfPaidCount}
+                </span>
+              </button>
+
+              {/* Button 3: Fee Pending */}
               <button
                 type="button"
                 className={`btn btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold transition-all shadow-2xs ${
@@ -382,8 +474,16 @@ export const Students: React.FC = () => {
             {paymentFilter !== 'ALL' && (
               <div className="small fw-semibold text-muted">
                 Showing <strong>{displayedStudents.length}</strong> resident(s) with status:
-                <span className={`badge ms-1.5 px-2.5 py-1 rounded-pill ${paymentFilter === 'PAID' ? 'bg-success' : 'bg-danger'}`}>
-                  {paymentFilter === 'PAID' ? '✓ PAID' : '⚠ PENDING'}
+                <span
+                  className={`badge ms-1.5 px-2.5 py-1 rounded-pill ${
+                    paymentFilter === 'PAID'
+                      ? 'bg-success'
+                      : paymentFilter === 'HALF_PAID'
+                      ? 'bg-warning text-dark'
+                      : 'bg-danger'
+                  }`}
+                >
+                  {paymentFilter === 'PAID' ? '✓ PAID' : paymentFilter === 'HALF_PAID' ? '◐ HALF PAID' : '⚠ PENDING'}
                 </span>
               </div>
             )}
@@ -471,6 +571,8 @@ export const Students: React.FC = () => {
             <Typography variant="h6" sx={{ color: '#334155', fontWeight: 800 }}>
               {paymentFilter === 'PAID'
                 ? 'No students found with Paid status'
+                : paymentFilter === 'HALF_PAID'
+                ? 'No students found with Half Paid fees'
                 : paymentFilter === 'PENDING'
                 ? 'No students found with Pending fees'
                 : 'No residents registered yet'}
@@ -536,7 +638,22 @@ export const Students: React.FC = () => {
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((student) => {
                       const initial = student.fullName ? student.fullName.charAt(0).toUpperCase() : 'S';
-                      const pending = isPending(student);
+                      const currentPaymentStatus = getPaymentStatus(student);
+                      const pending = currentPaymentStatus === 'PENDING';
+                      const halfPaid = currentPaymentStatus === 'HALF_PAID';
+
+                      let avatarBg = '#eff6ff';
+                      let avatarColor = '#1d4ed8';
+                      let avatarBorder = '1.5px solid #bfdbfe';
+                      if (pending) {
+                        avatarBg = '#fef2f2';
+                        avatarColor = '#dc2626';
+                        avatarBorder = '1.5px solid #fecaca';
+                      } else if (halfPaid) {
+                        avatarBg = '#fffbeb';
+                        avatarColor = '#b45309';
+                        avatarBorder = '1.5px solid #fde68a';
+                      }
 
                       return (
                         <TableRow key={student.id} hover sx={{ '&:hover': { bgcolor: '#fcfdfd' } }}>
@@ -548,9 +665,9 @@ export const Students: React.FC = () => {
                                   height: 38,
                                   fontSize: '0.9rem',
                                   fontWeight: 800,
-                                  bgcolor: pending ? '#fef2f2' : '#eff6ff',
-                                  color: pending ? '#dc2626' : '#1d4ed8',
-                                  border: pending ? '1.5px solid #fecaca' : '1.5px solid #bfdbfe',
+                                  bgcolor: avatarBg,
+                                  color: avatarColor,
+                                  border: avatarBorder,
                                 }}
                               >
                                 {initial}
@@ -617,7 +734,7 @@ export const Students: React.FC = () => {
                           <TableCell>
                             {student.nextPaymentDueDate ? (
                               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: pending ? '#dc2626' : '#334155' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: pending ? '#dc2626' : halfPaid ? '#b45309' : '#334155' }}>
                                   {student.nextPaymentDueDate}
                                 </Typography>
                                 {student.isOverdue && (
@@ -643,19 +760,55 @@ export const Students: React.FC = () => {
                             )}
                           </TableCell>
 
-                          {/* Payment Status Column */}
+                          {/* Payment Status Dropdown Column */}
                           <TableCell>
-                            {pending ? (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
-                                <span className="badge badge-soft-danger d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill fw-bold">
-                                  <i className="bi bi-clock-history text-danger"></i> PENDING
-                                </span>
-                              </Box>
-                            ) : (
-                              <span className="badge badge-soft-success d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill fw-bold">
-                                <i className="bi bi-check-circle-fill text-success"></i> PAID
-                              </span>
-                            )}
+                            <div className="position-relative d-inline-flex align-items-center">
+                              <select
+                                aria-label="Payment Status"
+                                disabled={updatingStudentId === student.studentId}
+                                value={currentPaymentStatus}
+                                onChange={(e) =>
+                                  handlePaymentStatusChange(
+                                    student,
+                                    e.target.value as 'PAID' | 'HALF_PAID' | 'PENDING'
+                                  )
+                                }
+                                className={`form-select form-select-sm fw-bold rounded-pill shadow-2xs transition-all ${
+                                  currentPaymentStatus === 'PAID'
+                                    ? 'bg-success-subtle text-success border-success'
+                                    : currentPaymentStatus === 'HALF_PAID'
+                                    ? 'bg-warning-subtle text-warning-emphasis border-warning'
+                                    : 'bg-danger-subtle text-danger border-danger'
+                                }`}
+                                style={{
+                                  cursor: updatingStudentId === student.studentId ? 'wait' : 'pointer',
+                                  minWidth: '135px',
+                                  fontSize: '0.78rem',
+                                  paddingTop: '0.35rem',
+                                  paddingBottom: '0.35rem',
+                                  paddingLeft: '0.85rem',
+                                  paddingRight: '1.85rem',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.3px',
+                                }}
+                              >
+                                <option value="PAID">🟢 Paid</option>
+                                <option value="HALF_PAID">🟡 Half Paid</option>
+                                <option value="PENDING">🔴 Pending</option>
+                              </select>
+                              {updatingStudentId === student.studentId && (
+                                <span
+                                  className="spinner-border spinner-border-sm text-primary position-absolute"
+                                  style={{
+                                    right: '26px',
+                                    width: '0.75rem',
+                                    height: '0.75rem',
+                                    pointerEvents: 'none',
+                                  }}
+                                  role="status"
+                                />
+                              )}
+                            </div>
                           </TableCell>
 
                           <TableCell>
@@ -685,7 +838,7 @@ export const Students: React.FC = () => {
                                 <Button
                                   size="small"
                                   variant="contained"
-                                  color={pending ? 'error' : 'success'}
+                                  color={pending ? 'error' : halfPaid ? 'warning' : 'success'}
                                   startIcon={<PaymentIcon fontSize="small" />}
                                   onClick={() => navigate(`/payments?studentId=${student.studentId}&action=pay`)}
                                   sx={{
@@ -694,7 +847,7 @@ export const Students: React.FC = () => {
                                     py: 0.4,
                                   }}
                                 >
-                                  {pending ? 'Pay Fee' : 'Payment'}
+                                  {pending ? 'Pay Fee' : halfPaid ? 'Balance' : 'Payment'}
                                 </Button>
                               )}
 

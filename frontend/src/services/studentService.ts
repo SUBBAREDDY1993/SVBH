@@ -46,4 +46,9 @@ export const studentService = {
   async deleteStudent(id: string): Promise<void> {
     await api.delete<ApiResponse<void>>(`/students/${id}`);
   },
+
+  async updatePaymentStatus(id: string, status: 'PAID' | 'PENDING' | 'HALF_PAID'): Promise<Student> {
+    const response = await api.patch<ApiResponse<Student>>(`/students/${id}/payment-status?status=${status}`);
+    return response.data.data!;
+  },
 };

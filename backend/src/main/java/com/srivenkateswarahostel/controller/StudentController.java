@@ -81,4 +81,13 @@ public class StudentController {
         studentService.deleteStudent(id);
         return ResponseEntity.ok(ApiResponse.successMessage("Student deleted successfully"));
     }
+
+    @PatchMapping("/{id}/payment-status")
+    @Operation(summary = "Update resident fee payment status (PAID, PENDING, HALF_PAID)")
+    public ResponseEntity<ApiResponse<StudentResponseDto>> updatePaymentStatus(
+            @PathVariable String id,
+            @RequestParam String status) {
+        StudentResponseDto updated = studentService.updatePaymentStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Payment status updated successfully"));
+    }
 }

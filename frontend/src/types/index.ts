@@ -116,7 +116,7 @@ export interface Student {
   vacateInfo?: VacateInfo;
   isOverdue?: boolean;
   daysOverdue?: number;
-  paymentStatus?: 'PAID' | 'PENDING';
+  paymentStatus?: 'PAID' | 'PENDING' | 'HALF_PAID';
   createdAt?: string;
   updatedAt?: string;
 }

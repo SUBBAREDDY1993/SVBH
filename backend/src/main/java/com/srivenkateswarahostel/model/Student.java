@@ -66,6 +66,8 @@ public class Student {
     private LocalDate nextPaymentDueDate;
     private LocalDate lastPaymentDate;
 
+    private String paymentStatus; // PAID, PENDING, HALF_PAID
+
     @Builder.Default
     private String admissionStatus = "CONFIRMED";
 

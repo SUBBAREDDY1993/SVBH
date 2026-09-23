@@ -305,21 +305,56 @@ public class StudentService {
         auditService.log("DELETE", "STUDENT", student.getStudentId(), "Permanently deleted resident: " + student.getFullName());
     }
 
+    @Transactional
+    public StudentResponseDto updatePaymentStatus(String id, String status) {
+        Student student = studentRepository.findById(id)
+                .or(() -> studentRepository.findByStudentId(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
+
+        String normalizedStatus = status != null ? status.trim().toUpperCase() : "PENDING";
+        if (!List.of("PAID", "PENDING", "HALF_PAID").contains(normalizedStatus)) {
+            throw new IllegalArgumentException("Invalid payment status: " + status + ". Allowed values: PAID, PENDING, HALF_PAID");
+        }
+
+        student.setPaymentStatus(normalizedStatus);
+        if ("PAID".equalsIgnoreCase(normalizedStatus)) {
+            student.setLastPaymentDate(LocalDate.now());
+            if (student.getNextPaymentDueDate() == null || !student.getNextPaymentDueDate().isAfter(LocalDate.now())) {
+                student.setNextPaymentDueDate(LocalDate.now().plusMonths(1));
+            }
+        }
+        student.setUpdatedAt(LocalDateTime.now());
+        Student saved = studentRepository.save(student);
+        auditService.log("PAYMENT_STATUS_UPDATE", "STUDENT", saved.getStudentId(), "Updated payment status to " + normalizedStatus);
+        return toStudentResponseDto(saved);
+    }
+
     public StudentResponseDto toStudentResponseDto(Student student) {
         LocalDate today = LocalDate.now();
         boolean overdue = false;
         long daysOverdue = 0;
-        String paymentStatus = "PAID";
+        String paymentStatus = student.getPaymentStatus();
 
-        if (student.getStatus() != StudentStatus.VACATED) {
-            if (student.getNextPaymentDueDate() == null) {
-                paymentStatus = "PENDING";
-            } else if (!today.isBefore(student.getNextPaymentDueDate())) {
-                if (today.isAfter(student.getNextPaymentDueDate())) {
+        if (paymentStatus == null || paymentStatus.isBlank()) {
+            paymentStatus = "PAID";
+            if (student.getStatus() != StudentStatus.VACATED) {
+                if (student.getNextPaymentDueDate() == null) {
+                    paymentStatus = "PENDING";
+                } else if (!today.isBefore(student.getNextPaymentDueDate())) {
+                    if (today.isAfter(student.getNextPaymentDueDate())) {
+                        overdue = true;
+                        daysOverdue = ChronoUnit.DAYS.between(student.getNextPaymentDueDate(), today);
+                    }
+                    paymentStatus = "PENDING";
+                }
+            }
+        } else {
+            paymentStatus = paymentStatus.toUpperCase();
+            if ("PENDING".equalsIgnoreCase(paymentStatus) || "HALF_PAID".equalsIgnoreCase(paymentStatus)) {
+                if (student.getNextPaymentDueDate() != null && today.isAfter(student.getNextPaymentDueDate())) {
                     overdue = true;
                     daysOverdue = ChronoUnit.DAYS.between(student.getNextPaymentDueDate(), today);
                 }
-                paymentStatus = "PENDING";
             }
         }
 
