@@ -77,8 +77,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `_If you have already paid, kindly ignore this message._\n\n` +
           `Have a great day ahead!\n` +
           `- Sri Venkateswara Boys Hostel Management\n` +
-          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
-          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
+          `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
+          `📞 Phone: +91 9441843574 | ✉️ svbhostel2026@gmail.com`
       );
     } else if (templateType === 1) {
       // Evening Template
@@ -93,8 +93,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `_If already paid, please ignore this notice._\n\n` +
           `Thank you,\n` +
           `- Sri Venkateswara Boys Hostel Management\n` +
-          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
-          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
+          `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
+          `📞 Phone: +91 9441843574 | ✉️ svbhostel2026@gmail.com`
       );
     } else {
       // Urgent / Overdue Notice Template
@@ -106,8 +106,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `_Kindly ignore if payment is already in progress._\n\n` +
           `Hostel Office Helpline:\n` +
           `Sri Venkateswara Boys Hostel\n` +
-          `📍 Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502\n` +
-          `📞 Phone: +91 98765 43210 | ✉️ svboyshostel.tirupati@gmail.com`
+          `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
+          `📞 Phone: +91 9441843574 | ✉️ svbhostel2026@gmail.com`
       );
     }
   }, [dueItem, templateType]);

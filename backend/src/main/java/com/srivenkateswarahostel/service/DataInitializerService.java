@@ -87,12 +87,13 @@ public class DataInitializerService implements CommandLineRunner {
     }
 
     public void initHostelSettings() {
-        if (hostelSettingRepository.count() == 0) {
-            HostelSetting setting = HostelSetting.builder()
+        HostelSetting setting = hostelSettingRepository.findAll().stream().findFirst().orElse(null);
+        if (setting == null) {
+            setting = HostelSetting.builder()
                     .hostelName("Sri Venkateswara Boys Hostel")
-                    .address("Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502")
-                    .contactNumber("+91 98765 43210")
-                    .email("svboyshostel.tirupati@gmail.com")
+                    .address("Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038")
+                    .contactNumber("+91 9441843574")
+                    .email("svbhostel2026@gmail.com")
                     .totalBeds(70)
                     .defaultMonthlyRent(5000.0)
                     .defaultSecurityDeposit(5000.0)
@@ -100,6 +101,11 @@ public class DataInitializerService implements CommandLineRunner {
                     .currency("INR")
                     .demoDataLoaded(false)
                     .build();
+            hostelSettingRepository.save(setting);
+        } else if (setting.getAddress() == null || setting.getAddress().contains("Tirupati") || setting.getContactNumber().contains("98765")) {
+            setting.setAddress("Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038");
+            setting.setContactNumber("+91 9441843574");
+            setting.setEmail("svbhostel2026@gmail.com");
             hostelSettingRepository.save(setting);
         }
     }

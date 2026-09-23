@@ -180,7 +180,7 @@ docker compose down
 ### 6. Printing Official Receipts
 1. On any payment record, click the **Receipt** button.
 2. An official, professional Sri Venkateswara Boys Hostel receipt opens with:
-   - Official hostel header and Tirupati address.
+   - Official hostel header and SR Nagar, Hyderabad address.
    - Receipt number, student ID, resident name, room and bed number.
    - Billing month, payment method, transaction ID, and amount paid.
 3. Click **Print Receipt** to open the browser's print dialog, formatted for crisp A4 portrait printing.
@@ -280,6 +280,6 @@ sri-venkateswara-hostel/
 ## 📞 Support & Institution Details
 
 **Sri Venkateswara Boys Hostel**  
-Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502  
-Phone: +91 98765 43210  
-Email: svboyshostel.tirupati@gmail.com
+Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038  
+Phone: +91 9441843574  
+Email: svbhostel2026@gmail.com

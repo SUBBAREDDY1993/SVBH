@@ -39,10 +39,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, payme
             Sri Venkateswara Boys Hostel
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
-            Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502
+            Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Phone: +91 98765 43210 | Email: svboyshostel.tirupati@gmail.com
+            Phone: +91 9441843574 | Email: svbhostel2026@gmail.com
           </Typography>
 
           <Box sx={{ display: 'inline-block', bgcolor: '#f1f5f9', px: 2, py: 0.5, borderRadius: 1, mt: 1.5 }}>

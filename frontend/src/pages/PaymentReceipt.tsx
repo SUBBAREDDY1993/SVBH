@@ -77,10 +77,10 @@ export const PaymentReceipt: React.FC = () => {
               Sri Venkateswara Boys Hostel
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502
+              Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Contact: +91 98765 43210 | svboyshostel.tirupati@gmail.com
+              Contact: +91 9441843574 | svbhostel2026@gmail.com
             </Typography>
 
             <Box sx={{ display: 'inline-block', bgcolor: '#f1f5f9', px: 2, py: 0.5, borderRadius: 1, mt: 1.5 }}>

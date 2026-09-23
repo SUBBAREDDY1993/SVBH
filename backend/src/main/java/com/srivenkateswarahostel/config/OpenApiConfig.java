@@ -23,7 +23,7 @@ public class OpenApiConfig {
                         .description("REST API documentation for Sri Venkateswara Boys Hostel Management System")
                         .contact(new Contact()
                                 .name("Sri Venkateswara Boys Hostel Administration")
-                                .email("svboyshostel.tirupati@gmail.com"))
+                                .email("svbhostel2026@gmail.com"))
                         .license(new License().name("Proprietary")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()

@@ -21,13 +21,13 @@ public class HostelSetting {
     private String hostelName = "Sri Venkateswara Boys Hostel";
 
     @Builder.Default
-    private String address = "Opp. SV University Main Gate, Tirupati, Andhra Pradesh - 517502";
+    private String address = "Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038";
 
     @Builder.Default
-    private String contactNumber = "+91 98765 43210";
+    private String contactNumber = "+91 9441843574";
 
     @Builder.Default
-    private String email = "svboyshostel.tirupati@gmail.com";
+    private String email = "svbhostel2026@gmail.com";
 
     @Builder.Default
     private int totalBeds = 70;
