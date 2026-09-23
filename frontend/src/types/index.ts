@@ -329,6 +329,35 @@ export interface HostelSetting {
   demoDataLoaded?: boolean;
 }
 
+export interface PaymentReminder {
+  id?: string;
+  studentId: string;
+  studentName: string;
+  mobileNumber: string;
+  roomNumber: string;
+  bedId: string;
+  amountDue: number;
+  nextPaymentDueDate: string;
+  daysUntilDue: number;
+  reminderSlot: 'MORNING' | 'EVENING' | 'MANUAL';
+  reminderDate: string;
+  sentAt: string;
+  channel: string;
+  message: string;
+  status: string;
+  whatsappUrl?: string;
+}
+
+export interface ReminderBatchResult {
+  slot: string;
+  date: string;
+  totalEligibleStudents: number;
+  remindersSent: number;
+  alreadyRemindedCount: number;
+  message: string;
+  reminders: PaymentReminder[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -336,3 +365,4 @@ export interface ApiResponse<T> {
   errors?: Record<string, string>;
   timestamp?: string;
 }
+

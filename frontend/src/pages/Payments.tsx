@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -26,6 +28,9 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { paymentService } from '../services/paymentService';
 import { studentService } from '../services/studentService';
 import { reportService } from '../services/reportService';
@@ -187,12 +192,17 @@ export const Payments: React.FC = () => {
       </Box>
 
       {/* Overview Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3.5 }}>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3, borderLeft: '4px solid #10b981' }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #10b981' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>TOTAL COLLECTED</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#059669' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#059669', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  TOTAL COLLECTED
+                </Typography>
+                <AccountBalanceWalletIcon sx={{ color: '#10b981', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#047857' }}>
                 ₹{totalCollected.toLocaleString('en-IN')}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>Across all filtered transactions</Typography>
@@ -200,10 +210,15 @@ export const Payments: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3, borderLeft: '4px solid #1e3a8a' }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #1e3a8a' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>TRANSACTIONS COUNT</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#1e3a8a' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#1e3a8a', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  TRANSACTIONS COUNT
+                </Typography>
+                <ReceiptLongIcon sx={{ color: '#2563eb', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#0f172a' }}>
                 {payments.length}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>Receipts generated</Typography>
@@ -211,10 +226,15 @@ export const Payments: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3, borderLeft: '4px solid #f59e0b' }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #f59e0b' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>AVERAGE PAYMENT</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#d97706' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  AVERAGE PAYMENT
+                </Typography>
+                <TrendingUpIcon sx={{ color: '#f59e0b', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#b45309' }}>
                 ₹{payments.length > 0 ? Math.round(totalCollected / payments.length).toLocaleString('en-IN') : 0}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>Per recorded receipt</Typography>
@@ -224,8 +244,8 @@ export const Payments: React.FC = () => {
       </Grid>
 
       {/* Filter Bar */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 2 }}>
+      <Card className="pro-card" sx={{ mb: 3 }}>
+        <CardContent sx={{ p: 2.5 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
@@ -265,70 +285,154 @@ export const Payments: React.FC = () => {
       </Card>
 
       {/* Payments Table */}
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      <Paper className="pro-card" sx={{ overflow: 'hidden' }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}>
             <CircularProgress />
           </Box>
         ) : payments.length === 0 ? (
           <Box sx={{ p: 6, textAlign: 'center' }}>
-            <Typography variant="h6" sx={{ color: '#475569' }}>No payment records found</Typography>
-            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
-              Click "Record Payment" to register a payment receipt.
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: '#f1f5f9',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <ReceiptLongIcon sx={{ fontSize: 32, color: '#94a3b8' }} />
+            </Box>
+            <Typography variant="h6" sx={{ color: '#334155', fontWeight: 800 }}>No payment records found</Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1, mb: 3, maxWidth: 420, mx: 'auto' }}>
+              Your database is clean and ready. Click below to record rent or security deposit payment for a resident.
             </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenRecordPayment}
+              sx={{ bgcolor: '#2563eb', fontWeight: 700, px: 3, py: 1 }}
+            >
+              Record First Payment
+            </Button>
           </Box>
         ) : (
           <>
             <TableContainer>
               <Table>
-                <TableHead>
+                <TableHead sx={{ bgcolor: '#f8fafc' }}>
                   <TableRow>
-                    <TableCell>Receipt No</TableCell>
-                    <TableCell>Student ID</TableCell>
-                    <TableCell>Student Name</TableCell>
-                    <TableCell>Room</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Method</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="right">Receipt</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Receipt No</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Resident</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Room</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Amount</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Method</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Status</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Receipt</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {payments
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((p) => (
-                      <TableRow key={p.id} hover>
-                        <TableCell sx={{ fontWeight: 800, color: '#1e3a8a' }}>
-                          {p.receiptNumber}
-                        </TableCell>
-                        <TableCell>{p.studentId}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{p.studentName}</TableCell>
-                        <TableCell>{p.roomNumber ? `Room ${p.roomNumber}` : 'N/A'}</TableCell>
-                        <TableCell>{p.paymentDate}</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: '#10b981' }}>
-                          ₹{p.amount?.toLocaleString('en-IN')}
-                        </TableCell>
-                        <TableCell>{p.paymentMethod}</TableCell>
-                        <TableCell>{p.paymentType?.replace('_', ' ')}</TableCell>
-                        <TableCell>
-                          <StatusChip status={p.paymentStatus} />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Button
-                            size="small"
-                            startIcon={<ReceiptIcon />}
-                            onClick={() => {
-                              setActiveReceipt(p);
-                              setReceiptOpen(true);
-                            }}
-                          >
-                            Receipt
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    .map((p) => {
+                      const initial = p.studentName ? p.studentName.charAt(0).toUpperCase() : 'S';
+                      return (
+                        <TableRow key={p.id} hover sx={{ '&:hover': { bgcolor: '#fcfdfd' } }}>
+                          <TableCell sx={{ fontWeight: 800, color: '#1e3a8a', fontFamily: 'monospace' }}>
+                            {p.receiptNumber}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                              <Avatar
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  fontSize: '0.8rem',
+                                  fontWeight: 800,
+                                  bgcolor: '#eff6ff',
+                                  color: '#1d4ed8',
+                                  border: '1px solid #bfdbfe',
+                                }}
+                              >
+                                {initial}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                                  {p.studentName}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                  {p.studentId}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            {p.roomNumber ? (
+                              <Chip label={`Room ${p.roomNumber}`} size="small" sx={{ bgcolor: '#f1f5f9', fontWeight: 600, fontSize: '0.75rem' }} />
+                            ) : (
+                              'N/A'
+                            )}
+                          </TableCell>
+                          <TableCell sx={{ color: '#475569', fontSize: '0.85rem' }}>{p.paymentDate}</TableCell>
+                          <TableCell sx={{ fontWeight: 800, color: '#047857', fontSize: '0.95rem' }}>
+                            ₹{p.amount?.toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={p.paymentMethod}
+                              size="small"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: '0.72rem',
+                                bgcolor:
+                                  p.paymentMethod === 'UPI'
+                                    ? '#f3e8ff'
+                                    : p.paymentMethod === 'CASH'
+                                    ? '#dcfce7'
+                                    : '#e0f2fe',
+                                color:
+                                  p.paymentMethod === 'UPI'
+                                    ? '#7e22ce'
+                                    : p.paymentMethod === 'CASH'
+                                    ? '#15803d'
+                                    : '#0369a1',
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.85rem', color: '#475569' }}>
+                            {p.paymentType?.replace(/_/g, ' ')}
+                          </TableCell>
+                          <TableCell>
+                            <StatusChip status={p.paymentStatus} />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<ReceiptIcon fontSize="small" />}
+                              onClick={() => {
+                                setActiveReceipt(p);
+                                setReceiptOpen(true);
+                              }}
+                              sx={{
+                                borderColor: '#e2e8f0',
+                                color: '#334155',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
+                              }}
+                            >
+                              Receipt
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </TableContainer>

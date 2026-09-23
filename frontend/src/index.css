@@ -32,9 +32,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glassmorphism Header */
 .glass-header {
-  background-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
@@ -53,6 +53,74 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
   line-height: 1;
+}
+
+/* Professional Card & List Row Styles */
+.pro-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pro-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+  border-color: rgba(203, 213, 225, 0.9);
+}
+
+/* Bed & Entity Row Item */
+.bed-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  background-color: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bed-row-item:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  background-color: #fcfdfd;
+}
+
+.bed-row-item.available {
+  border-left: 4px solid #10b981;
+}
+
+.bed-row-item.available:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background-color: #f0fdf4;
+}
+
+.bed-row-item.occupied {
+  border-left: 4px solid #ef4444;
+}
+
+.bed-row-item.occupied:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: #fef2f2;
+}
+
+.bed-row-item.reserved {
+  border-left: 4px solid #f59e0b;
+}
+
+.bed-row-item.reserved:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  background-color: #fffbeb;
+}
+
+.bed-row-item.maintenance {
+  border-left: 4px solid #64748b;
+}
+
+.bed-row-item.maintenance:hover {
+  border-color: rgba(100, 116, 139, 0.4);
+  background-color: #f8fafc;
 }
 
 /* Pulsing Status Dot Animations */

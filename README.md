@@ -1,6 +1,6 @@
 # Sri Venkateswara Boys Hostel Management System
 
-A **complete, production-ready, enterprise-grade Hostel Management Web Application** designed for **Sri Venkateswara Boys Hostel**. The system operates with a default capacity of **70 beds** across 18 rooms on 3 floors (and is architected to scale dynamically to any number of rooms and beds without code modifications).
+A **complete, production-ready, enterprise-grade Hostel Management Web Application** designed for **Sri Venkateswara Boys Hostel**. The system operates with a default capacity of **70 beds** across **16 rooms on 6 floors** (Floors 1-5 have rooms X01 with 4 beds, X02 with 4 beds, and X03 with 5 beds; Floor 6 has room 601 with 5 beds).
 
 ---
 
@@ -85,7 +85,7 @@ mvn spring-boot:run
 ```
 > **Note**: On the first start, the system automatically initializes:
 > 1. Default Admin (`admin` / `admin123`) and Staff (`staff` / `staff123`) accounts.
-> 2. The full **70 beds layout across 18 rooms on 3 floors**.
+> 2. The full **70 beds layout across 16 rooms on 6 floors**.
 > 3. Sample demo students, active allocations, sample payment receipts, and overdue records so the dashboard is immediately populated.
 
 The backend will start at: `http://localhost:8081`
@@ -139,7 +139,7 @@ docker compose down
 
 ### 1. Visual Bed Matrix & Room Navigation
 1. Go to **Rooms & Beds** in the sidebar.
-2. Filter by floor tabs (**Floor 1**, **Floor 2**, **Floor 3**).
+2. Filter by floor tabs (**Floor 1**, **Floor 2**, **Floor 3**, **Floor 4**, **Floor 5**, **Floor 6**).
 3. Each room card displays all beds with status indicators:
    - 🟢 **AVAILABLE**: Green badge. Click the green `+` icon to immediately admit a student to that specific bed.
    - 🔴 **OCCUPIED**: Red badge with the resident's name. Click the profile icon to inspect their profile, or transfer icon to switch beds.

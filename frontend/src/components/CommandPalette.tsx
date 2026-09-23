@@ -138,7 +138,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
       id: 'nav-rooms',
       category: 'Navigation',
       title: 'Rooms & Bed Matrix',
-      subtitle: 'Visual interactive grid of all 70 beds across 3 floors',
+      subtitle: 'Visual interactive grid of all 70 beds across 6 floors',
       icon: <MeetingRoomIcon sx={{ color: '#0d9488' }} />,
       action: () => {
         navigate('/rooms');

@@ -125,6 +125,7 @@ public class StudentService {
     @Transactional
     public StudentResponseDto updateStudent(String id, StudentUpdateRequest request) {
         Student student = studentRepository.findById(id)
+                .or(() -> studentRepository.findByStudentId(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + id));
 
         student.setFullName(request.getFullName().trim());
@@ -283,14 +284,25 @@ public class StudentService {
     @Transactional
     public void deleteStudent(String id) {
         Student student = studentRepository.findById(id)
+                .or(() -> studentRepository.findByStudentId(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
 
-        if (student.getStatus() != StudentStatus.VACATED) {
-            throw new BadRequestException("Cannot delete active student. Vacate student first.");
+        // If student currently occupies a bed, release the bed back to AVAILABLE
+        if (student.getBedId() != null && student.getStatus() != StudentStatus.VACATED) {
+            String bedId = student.getBedId();
+            bedRepository.findByBedId(bedId).ifPresent(bed -> {
+                bed.setStatus(BedStatus.AVAILABLE);
+                bed.setStudentId(null);
+                bed.setStudentName(null);
+                bed.setAllocationDate(null);
+                bed.setUpdatedAt(LocalDateTime.now());
+                bedRepository.save(bed);
+                roomService.syncRoomStats(bed.getRoomNumber());
+            });
         }
 
         studentRepository.delete(student);
-        auditService.log("DELETE", "STUDENT", id, "Permanently deleted vacated student: " + student.getFullName());
+        auditService.log("DELETE", "STUDENT", student.getStudentId(), "Permanently deleted resident: " + student.getFullName());
     }
 
     public StudentResponseDto toStudentResponseDto(Student student) {

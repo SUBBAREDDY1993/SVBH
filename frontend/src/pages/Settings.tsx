@@ -4,14 +4,18 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Divider,
   Grid,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { settingService } from '../services/settingService';
 import { HostelSetting } from '../types';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
@@ -24,6 +28,8 @@ export const Settings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   // Form Fields
   const [hostelName, setHostelName] = useState('');
@@ -89,13 +95,27 @@ export const Settings: React.FC = () => {
     try {
       setIsResetting(true);
       await settingService.resetDemoData();
-      showSuccess('Demo data successfully re-seeded with 70 beds, 18 rooms, 12 sample students, and payments.');
+      showSuccess('Demo data successfully re-seeded with 70 beds, 16 rooms, 12 sample students, and payments.');
       setResetConfirmOpen(false);
       loadSettings();
     } catch (err: any) {
       showError(err.response?.data?.message || 'Failed to reset demo data');
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const handleClearDemoData = async () => {
+    try {
+      setIsClearing(true);
+      await settingService.clearDemoData();
+      showSuccess('All dummy data deleted successfully! 70 beds across 16 rooms are now AVAILABLE for real student admissions.');
+      setClearConfirmOpen(false);
+      loadSettings();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to clear dummy data');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -109,126 +129,147 @@ export const Settings: React.FC = () => {
 
   return (
     <Box sx={{ pb: 4, maxWidth: 800 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>
-          Hostel System Settings
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
-          Configure institution branding, defaults, and demo data controls
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            Hostel System Settings
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Configure institution branding, defaults, and data management controls
+          </Typography>
+        </Box>
+        <Box>
+          {settings?.demoDataLoaded ? (
+            <Chip
+              label="Demo Mode (Sample Data Active)"
+              color="warning"
+              variant="outlined"
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            />
+          ) : (
+            <Chip
+              icon={<CheckCircleOutlineIcon />}
+              label="Live Operations Mode (Clean Real Data)"
+              color="success"
+              variant="filled"
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            />
+          )}
+        </Box>
       </Box>
 
-      <Card sx={{ borderRadius: 3, mb: 4 }}>
+      {/* Main Configuration Card */}
+      <Card sx={{ borderRadius: 3, border: '1px solid #e2e8f0', mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
           <Box component="form" onSubmit={handleSave}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e3a8a' }}>
-              General Information
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+              Hostel Details & Policies
             </Typography>
 
-            <Grid container spacing={2.5}>
+            <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
-                  label="Hostel Name *"
                   fullWidth
-                  size="small"
+                  label="Hostel Name"
                   value={hostelName}
                   onChange={(e) => setHostelName(e.target.value)}
+                  required
                 />
               </Grid>
 
               <Grid item xs={12}>
                 <TextField
-                  label="Official Address *"
                   fullWidth
                   multiline
                   rows={2}
-                  size="small"
+                  label="Full Physical Address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  required
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Contact Phone *"
                   fullWidth
-                  size="small"
+                  label="Primary Contact Number"
                   value={contactNumber}
                   onChange={(e) => setContactNumber(e.target.value)}
+                  required
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Official Email *"
                   fullWidth
-                  size="small"
+                  type="email"
+                  label="Official Email Address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </Grid>
-            </Grid>
 
-            <Divider sx={{ my: 4 }} />
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 2, mb: 1 }}>
+                  Fee & Allocation Defaults
+                </Typography>
+              </Grid>
 
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e3a8a' }}>
-              Hostel Capacity & Billing Defaults
-            </Typography>
-
-            <Grid container spacing={2.5}>
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Hostel Total Beds Capacity"
-                  type="number"
                   fullWidth
-                  size="small"
+                  type="number"
+                  label="Total Hostel Bed Capacity"
                   value={totalBeds}
-                  onChange={(e) => setTotalBeds(Number(e.target.value))}
-                  helperText="Default: 70 beds (scalable)"
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Default Monthly Rent (₹)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  value={defaultMonthlyRent}
-                  onChange={(e) => setDefaultMonthlyRent(Number(e.target.value))}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Default Security Deposit (₹)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  value={defaultSecurityDeposit}
-                  onChange={(e) => setDefaultSecurityDeposit(Number(e.target.value))}
+                  onChange={(e) => setTotalBeds(parseInt(e.target.value) || 0)}
+                  helperText="Default capacity is 70 beds across 16 rooms"
+                  required
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Payment Grace Period (Days)"
-                  type="number"
                   fullWidth
-                  size="small"
-                  value={paymentGracePeriodDays}
-                  onChange={(e) => setPaymentGracePeriodDays(Number(e.target.value))}
-                  helperText="Days before flagging overdue"
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Currency Code"
-                  fullWidth
-                  size="small"
+                  label="Currency Symbol / Code"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
+                  required
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Default Monthly Rent (₹)"
+                  value={defaultMonthlyRent}
+                  onChange={(e) => setDefaultMonthlyRent(parseFloat(e.target.value) || 0)}
+                  required
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Default Security Deposit (₹)"
+                  value={defaultSecurityDeposit}
+                  onChange={(e) => setDefaultSecurityDeposit(parseFloat(e.target.value) || 0)}
+                  required
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Payment Due Grace Period (Days)"
+                  value={paymentGracePeriodDays}
+                  onChange={(e) => setPaymentGracePeriodDays(parseInt(e.target.value) || 0)}
+                  helperText="Days past due date before marking overdue"
+                  required
                 />
               </Grid>
             </Grid>
@@ -248,35 +289,75 @@ export const Settings: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Demo Data Management Card */}
-      <Card sx={{ borderRadius: 3, border: '1px solid #fecaca', bgcolor: '#fff5f5' }}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#991b1b', mb: 1 }}>
-            Demo Data Control
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#7f1d1d', mb: 3 }}>
-            Need to reset your database back to the fresh demo state? This will recreate 70 beds, 18 rooms, 12 sample students, and payment records.
-          </Typography>
+      {/* Real Data & Dummy Data Controls */}
+      <Stack spacing={3}>
+        {/* Clear Dummy Data Card */}
+        <Card sx={{ borderRadius: 3, border: '1px solid #fed7aa', bgcolor: '#fffaf0' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <DeleteSweepIcon sx={{ color: '#c2410c', fontSize: 28 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#9a3412' }}>
+                Prepare for Real Data (Delete All Dummy Records)
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: '#7c2d12', mb: 3, lineHeight: 1.6 }}>
+              Wipe all sample dummy students, demo fee receipts, and allocation records. Your <strong>16 rooms and 70 beds across 6 floors</strong> will remain intact and will be reset to <strong>AVAILABLE</strong> so you can immediately begin enrolling real students.
+            </Typography>
 
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<RestartAltIcon />}
-            onClick={() => setResetConfirmOpen(true)}
-            sx={{ fontWeight: 700 }}
-          >
-            Reset Database to 70 Beds Demo State
-          </Button>
-        </CardContent>
-      </Card>
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<DeleteSweepIcon />}
+              onClick={() => setClearConfirmOpen(true)}
+              sx={{ fontWeight: 700, bgcolor: '#ea580c', '&:hover': { bgcolor: '#c2410c' } }}
+            >
+              Clear All Dummy Data (Ready for Real Residents)
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Demo Data Management Card */}
+        <Card sx={{ borderRadius: 3, border: '1px solid #e2e8f0', bgcolor: '#f8fafc' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
+              Demo / Testing Data Controls
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mb: 3 }}>
+              Need to load sample test data for demonstration or evaluation? This will populate the 70 beds with 12 sample students, payments, and overdue alerts.
+            </Typography>
+
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<RestartAltIcon />}
+              onClick={() => setResetConfirmOpen(true)}
+              sx={{ fontWeight: 600 }}
+            >
+              Load Sample Demo Data (12 Test Students)
+            </Button>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      {/* Clear Confirmation Dialog */}
+      <ConfirmationDialog
+        open={clearConfirmOpen}
+        title="Clear All Dummy Data"
+        message="Are you sure you want to delete all dummy students and payments? The 16 rooms and 70 beds layout will be preserved and all beds will be marked AVAILABLE for real student admissions."
+        confirmText="Yes, Clear Dummy Data"
+        confirmColor="warning"
+        isLoading={isClearing}
+        onConfirm={handleClearDemoData}
+        onCancel={() => setClearConfirmOpen(false)}
+      />
 
       {/* Reset Confirmation Dialog */}
       <ConfirmationDialog
         open={resetConfirmOpen}
-        title="Reset Demo Data"
-        message="Are you sure you want to reset all data back to the demo state (70 beds, 18 rooms, sample students)? Any custom changes made will be re-initialized."
-        confirmText="Yes, Reset Database"
-        confirmColor="error"
+        title="Load Demo Data"
+        message="Are you sure you want to populate demo students and payment records? Any custom students currently added will be replaced by demo data."
+        confirmText="Yes, Load Demo Data"
+        confirmColor="primary"
         isLoading={isResetting}
         onConfirm={handleResetDemoData}
         onCancel={() => setResetConfirmOpen(false)}

@@ -43,6 +43,7 @@ const App: React.FC = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/students" element={<Students />} />
                     <Route path="/students/new" element={<StudentForm />} />
+                    <Route path="/students/admit" element={<StudentForm />} />
                     <Route path="/students/:id" element={<StudentDetails />} />
                     <Route path="/rooms" element={<Rooms />} />
                     <Route path="/allocations" element={<Allocations />} />

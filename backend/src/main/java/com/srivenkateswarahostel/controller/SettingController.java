@@ -42,4 +42,12 @@ public class SettingController {
         dataInitializerService.seedDemoData();
         return ResponseEntity.ok(ApiResponse.successMessage("Demo data reseeded successfully (70 beds, rooms, students, payments)"));
     }
+
+    @PostMapping("/clear-demo")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Clear all dummy data (students, payments, allocations) and prepare for real data with all 70 beds available")
+    public ResponseEntity<ApiResponse<Void>> clearDemoData() {
+        dataInitializerService.clearDemoData();
+        return ResponseEntity.ok(ApiResponse.successMessage("Dummy data cleared successfully. All 70 beds across 16 rooms are now AVAILABLE for real student admissions."));
+    }
 }

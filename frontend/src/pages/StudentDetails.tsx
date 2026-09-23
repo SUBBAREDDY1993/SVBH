@@ -31,12 +31,16 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import PaymentIcon from '@mui/icons-material/Payment';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { studentService } from '../services/studentService';
 import { paymentService } from '../services/paymentService';
 import { allocationService } from '../services/allocationService';
 import { AllocationHistory, Payment, Student } from '../types';
 import { StatusChip } from '../components/StatusChip';
 import { ReceiptModal } from '../components/ReceiptModal';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { PaymentReminderModal } from '../components/PaymentReminderModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,6 +78,13 @@ export const StudentDetails: React.FC = () => {
   // Receipt Modal
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+
+  // Delete Modal
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Reminder Modal
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
 
   const loadData = async () => {
     if (!id) return;
@@ -142,6 +153,21 @@ export const StudentDetails: React.FC = () => {
     }
   };
 
+  const handleDeleteStudent = async () => {
+    if (!student) return;
+    try {
+      setIsDeleting(true);
+      await studentService.deleteStudent(student.id || student.studentId);
+      showSuccess(`Resident ${student.fullName} has been permanently deleted.`);
+      navigate('/students');
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to delete student');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}>
@@ -196,6 +222,15 @@ export const StudentDetails: React.FC = () => {
                 Record Payment
               </Button>
 
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<WhatsAppIcon />}
+                onClick={() => setReminderModalOpen(true)}
+              >
+                Fee Reminder
+              </Button>
+
               {student.status === 'ACTIVE' && (
                 <Button
                   variant="outlined"
@@ -218,6 +253,18 @@ export const StudentDetails: React.FC = () => {
                 </Button>
               )}
             </>
+          )}
+
+          {student.status === 'VACATED' && isAdmin && (
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={() => setDeleteDialogOpen(true)}
+              sx={{ bgcolor: '#dc2626' }}
+            >
+              Delete Record
+            </Button>
           )}
         </Box>
       </Box>
@@ -665,6 +712,41 @@ export const StudentDetails: React.FC = () => {
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
         payment={selectedPayment}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        title="Permanently Delete Vacated Student"
+        message={`Are you sure you want to permanently delete resident ${student.fullName} (${student.studentId})? This will remove their profile record from the database.`}
+        confirmText="Delete Permanently"
+        confirmColor="error"
+        onConfirm={handleDeleteStudent}
+        onCancel={() => setDeleteDialogOpen(false)}
+        isLoading={isDeleting}
+      />
+
+      {/* Payment Reminder Modal */}
+      <PaymentReminderModal
+        open={reminderModalOpen}
+        onClose={() => setReminderModalOpen(false)}
+        dueItem={
+          student
+            ? {
+                studentId: student.studentId,
+                studentName: student.fullName,
+                mobileNumber: student.mobileNumber,
+                roomNumber: student.roomNumber,
+                bedId: student.bedId,
+                bedNumber: student.bedNumber,
+                monthlyRent: student.monthlyRent,
+                nextPaymentDueDate: student.nextPaymentDueDate || '',
+                overdue: false,
+                daysOverdue: 0,
+                dueCategory: 'DUE_SOON',
+              }
+            : null
+        }
       />
     </Box>
   );

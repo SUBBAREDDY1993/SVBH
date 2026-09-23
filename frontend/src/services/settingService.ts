@@ -15,4 +15,8 @@ export const settingService = {
   async resetDemoData(): Promise<void> {
     await api.post<ApiResponse<void>>('/settings/reset-demo');
   },
+
+  async clearDemoData(): Promise<void> {
+    await api.post<ApiResponse<void>>('/settings/clear-demo');
+  },
 };

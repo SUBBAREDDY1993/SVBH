@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -23,6 +25,9 @@ import {
 } from '@mui/material';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import HistoryIcon from '@mui/icons-material/History';
+import PeopleIcon from '@mui/icons-material/People';
+import HotelIcon from '@mui/icons-material/Hotel';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import { studentService } from '../services/studentService';
 import { roomService } from '../services/roomService';
 import { allocationService } from '../services/allocationService';
@@ -125,7 +130,7 @@ export const Allocations: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a', letterSpacing: -0.5 }}>
             Bed Allocation & Transfers
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
@@ -136,7 +141,12 @@ export const Allocations: React.FC = () => {
           variant="contained"
           startIcon={<SwapHorizIcon />}
           onClick={() => handleOpenTransfer()}
-          sx={{ bgcolor: '#2563eb' }}
+          sx={{
+            bgcolor: '#2563eb',
+            fontWeight: 700,
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+            '&:hover': { bgcolor: '#1d4ed8' },
+          }}
         >
           Transfer Resident Bed
         </Button>
@@ -145,10 +155,15 @@ export const Allocations: React.FC = () => {
       {/* Overview Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3 }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #1e3a8a' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>ACTIVE RESIDENTS</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#1e3a8a' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#1e3a8a', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  ACTIVE RESIDENTS
+                </Typography>
+                <PeopleIcon sx={{ color: '#2563eb', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#0f172a' }}>
                 {activeStudents.length}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>Assigned to beds</Typography>
@@ -156,21 +171,31 @@ export const Allocations: React.FC = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3 }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #10b981' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>FREE BEDS READY</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#10b981' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#059669', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  FREE BEDS READY
+                </Typography>
+                <HotelIcon sx={{ color: '#10b981', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#047857' }}>
                 {rooms.reduce((acc, r) => acc + (r.availableBeds || 0), 0)}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>Available for transfer</Typography>
+              <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>Available for assignment</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card sx={{ bgcolor: '#ffffff', borderRadius: 3 }}>
+          <Card className="pro-card" sx={{ borderTop: '4px solid #64748b' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>TOTAL ALLOCATION EVENTS</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#475569' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  ALLOCATION EVENTS
+                </Typography>
+                <EventNoteIcon sx={{ color: '#64748b', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#334155' }}>
                 {histories.length}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>Historical records kept</Typography>
@@ -180,10 +205,10 @@ export const Allocations: React.FC = () => {
       </Grid>
 
       {/* Allocation History Table */}
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid #e2e8f0' }}>
+      <Paper className="pro-card" sx={{ overflow: 'hidden' }}>
+        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.2, borderBottom: '1px solid #e2e8f0', bgcolor: '#f8fafc' }}>
           <HistoryIcon sx={{ color: '#1e3a8a' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
             Allocation & Transfer Audit History
           </Typography>
         </Box>
@@ -194,61 +219,117 @@ export const Allocations: React.FC = () => {
           </Box>
         ) : histories.length === 0 ? (
           <Box sx={{ p: 6, textAlign: 'center' }}>
-            <Typography variant="body1" sx={{ color: '#64748b' }}>No allocation history found</Typography>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: '#f1f5f9',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <HistoryIcon sx={{ fontSize: 32, color: '#94a3b8' }} />
+            </Box>
+            <Typography variant="h6" sx={{ color: '#334155', fontWeight: 800 }}>No allocation history yet</Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
+              Allocation events, bed assignments, and transfer audits will appear here.
+            </Typography>
           </Box>
         ) : (
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: '#f8fafc' }}>
                 <TableRow>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Student ID</TableCell>
-                  <TableCell>Student Name</TableCell>
-                  <TableCell>From Bed</TableCell>
-                  <TableCell>To Bed</TableCell>
-                  <TableCell>Date & Time</TableCell>
-                  <TableCell>Handled By</TableCell>
-                  <TableCell>Remarks</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Type</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Resident</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>From Bed</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>To Bed</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Date & Time</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Handled By</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>Remarks</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {histories.map((h) => (
-                  <TableRow key={h.id} hover>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          px: 1,
-                          py: 0.2,
-                          borderRadius: 1,
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          bgcolor:
-                            h.type === 'INITIAL'
-                              ? '#dcfce7'
-                              : h.type === 'TRANSFER'
-                              ? '#fef3c7'
-                              : '#fee2e2',
-                          color:
-                            h.type === 'INITIAL'
-                              ? '#166534'
-                              : h.type === 'TRANSFER'
-                              ? '#92400e'
-                              : '#991b1b',
-                        }}
-                      >
-                        {h.type}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#1e3a8a' }}>{h.studentId}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{h.studentName}</TableCell>
-                    <TableCell>{h.fromRoom ? `Room ${h.fromRoom} (${h.fromBedId})` : '-'}</TableCell>
-                    <TableCell>{h.toRoom ? `Room ${h.toRoom} (${h.toBedId})` : '-'}</TableCell>
-                    <TableCell>{h.allocationDate ? new Date(h.allocationDate).toLocaleString() : 'N/A'}</TableCell>
-                    <TableCell>{h.allocatedBy || 'ADMIN'}</TableCell>
-                    <TableCell>{h.remarks || 'Standard allocation'}</TableCell>
-                  </TableRow>
-                ))}
+                {histories.map((h) => {
+                  const initial = h.studentName ? h.studentName.charAt(0).toUpperCase() : 'S';
+                  return (
+                    <TableRow key={h.id} hover sx={{ '&:hover': { bgcolor: '#fcfdfd' } }}>
+                      <TableCell>
+                        <Chip
+                          label={h.type}
+                          size="small"
+                          sx={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            bgcolor:
+                              h.type === 'INITIAL'
+                                ? '#dcfce7'
+                                : h.type === 'TRANSFER'
+                                ? '#fef3c7'
+                                : '#fee2e2',
+                            color:
+                              h.type === 'INITIAL'
+                                ? '#15803d'
+                                : h.type === 'TRANSFER'
+                                ? '#b45309'
+                                : '#b91c1c',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                          <Avatar
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              bgcolor: '#eff6ff',
+                              color: '#1d4ed8',
+                              border: '1px solid #bfdbfe',
+                            }}
+                          >
+                            {initial}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                              {h.studentName}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b' }}>
+                              {h.studentId}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        {h.fromRoom ? (
+                          <Chip label={`Room ${h.fromRoom} (${h.fromBedId})`} size="small" variant="outlined" sx={{ fontSize: '0.75rem' }} />
+                        ) : (
+                          <Typography variant="caption" sx={{ color: '#94a3b8' }}>-</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {h.toRoom ? (
+                          <Chip label={`Room ${h.toRoom} (${h.toBedId})`} size="small" sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600, fontSize: '0.75rem' }} />
+                        ) : (
+                          <Typography variant="caption" sx={{ color: '#94a3b8' }}>-</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ color: '#475569', fontSize: '0.85rem' }}>
+                        {h.allocationDate ? new Date(h.allocationDate).toLocaleString() : 'N/A'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
+                        {h.allocatedBy || 'ADMIN'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {h.remarks || 'Standard allocation'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>

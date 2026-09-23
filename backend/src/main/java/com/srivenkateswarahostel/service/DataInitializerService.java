@@ -45,11 +45,12 @@ public class DataInitializerService implements CommandLineRunner {
     public void run(String... args) {
         initAdminUser();
         initHostelSettings();
-        if (bedRepository.count() == 0) {
-            log.info("No beds detected in database. Initializing 70 beds, rooms, sample students, and payment records...");
-            seedDemoData();
+        if (bedRepository.count() == 0 || !roomRepository.existsByRoomNumber("601") || roomRepository.existsByRoomNumber("104")) {
+            log.info("Initializing layout to 6 floors (16 rooms, exactly 70 beds)...");
+            initRoomsAndBeds();
+            roomRepository.findAll().forEach(room -> roomService.syncRoomStats(room.getRoomNumber()));
         } else {
-            log.info("Database already initialized with {} beds.", bedRepository.count());
+            log.info("Database initialized with {} beds across {} rooms.", bedRepository.count(), roomRepository.count());
         }
     }
 
@@ -97,46 +98,89 @@ public class DataInitializerService implements CommandLineRunner {
                     .defaultSecurityDeposit(5000.0)
                     .paymentGracePeriodDays(5)
                     .currency("INR")
-                    .demoDataLoaded(true)
+                    .demoDataLoaded(false)
                     .build();
             hostelSettingRepository.save(setting);
         }
     }
 
-    public synchronized void seedDemoData() {
-        // Clear non-user collections before demo seed
-        studentRepository.deleteAll();
+    public synchronized void initRoomsAndBeds() {
         bedRepository.deleteAll();
         roomRepository.deleteAll();
+
+        // Floor 1: 3 rooms (4 + 4 + 5 = 13 beds)
+        createRoomWithBeds("101", 1, 4, RoomType.ATTACHED_BATHROOM, 5500.0, "Deluxe 4-sharing with attached bathroom");
+        createRoomWithBeds("102", 1, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("103", 1, 5, RoomType.NON_AC, 4800.0, "Spacious 5-sharing room");
+
+        // Floor 2: 3 rooms (4 + 4 + 5 = 13 beds)
+        createRoomWithBeds("201", 2, 4, RoomType.ATTACHED_BATHROOM, 5500.0, "Deluxe 4-sharing with attached bathroom");
+        createRoomWithBeds("202", 2, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("203", 2, 5, RoomType.NON_AC, 4800.0, "Spacious 5-sharing room");
+
+        // Floor 3: 3 rooms (4 + 4 + 5 = 13 beds)
+        createRoomWithBeds("301", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("302", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("303", 3, 5, RoomType.NON_AC, 4800.0, "Spacious 5-sharing room");
+
+        // Floor 4: 3 rooms (4 + 4 + 5 = 13 beds)
+        createRoomWithBeds("401", 4, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("402", 4, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
+        createRoomWithBeds("403", 4, 5, RoomType.NON_AC, 4800.0, "Spacious 5-sharing room");
+
+        // Floor 5: 3 rooms (4 + 4 + 5 = 13 beds)
+        createRoomWithBeds("501", 5, 4, RoomType.AC, 6500.0, "Premium AC 4-sharing room");
+        createRoomWithBeds("502", 5, 4, RoomType.AC, 6500.0, "Premium AC 4-sharing room");
+        createRoomWithBeds("503", 5, 5, RoomType.NON_AC, 4800.0, "Spacious 5-sharing room");
+
+        // Floor 6: 1 room (5 beds)
+        createRoomWithBeds("601", 6, 5, RoomType.AC, 6000.0, "Penthouse AC 5-sharing room");
+
+        log.info("Initialized 16 rooms with exactly 70 beds across 6 floors.");
+    }
+
+    public synchronized void clearDemoData() {
+        log.info("Clearing all dummy data (students, payments, allocations)...");
+        studentRepository.deleteAll();
         paymentRepository.deleteAll();
         allocationHistoryRepository.deleteAll();
 
-        // 1. Create Rooms and Beds totaling exactly 70 Beds
-        // Floor 1: 6 rooms (5x4 + 1x3 = 23 beds)
-        createRoomWithBeds("101", 1, 4, RoomType.ATTACHED_BATHROOM, 5500.0, "Deluxe 4-sharing with attached bathroom");
-        createRoomWithBeds("102", 1, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("103", 1, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("104", 1, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("105", 1, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("106", 1, 3, RoomType.AC, 6500.0, "AC 3-sharing room");
+        // Ensure 16 rooms and 70 beds exist
+        if (bedRepository.count() != 70 || roomRepository.count() != 16) {
+            initRoomsAndBeds();
+        } else {
+            // Reset all existing beds to AVAILABLE
+            List<Bed> beds = bedRepository.findAll();
+            for (Bed bed : beds) {
+                bed.setStatus(BedStatus.AVAILABLE);
+                bed.setStudentId(null);
+                bed.setStudentName(null);
+                bed.setAllocationDate(null);
+                bed.setUpdatedAt(LocalDateTime.now());
+            }
+            bedRepository.saveAll(beds);
+        }
 
-        // Floor 2: 6 rooms (5x4 + 1x3 = 23 beds)
-        createRoomWithBeds("201", 2, 4, RoomType.ATTACHED_BATHROOM, 5500.0, "Deluxe 4-sharing with attached bathroom");
-        createRoomWithBeds("202", 2, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("203", 2, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("204", 2, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("205", 2, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("206", 2, 3, RoomType.AC, 6500.0, "AC 3-sharing room");
+        // Sync room statistics for all rooms
+        roomRepository.findAll().forEach(room -> roomService.syncRoomStats(room.getRoomNumber()));
 
-        // Floor 3: 6 rooms (6x4 = 24 beds)
-        createRoomWithBeds("301", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("302", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("303", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("304", 3, 4, RoomType.NON_AC, 5000.0, "Standard 4-sharing room");
-        createRoomWithBeds("305", 3, 4, RoomType.AC, 6500.0, "AC 4-sharing room");
-        createRoomWithBeds("306", 3, 4, RoomType.AC, 6500.0, "AC 4-sharing room");
+        // Mark settings as live / not demo data
+        hostelSettingRepository.findAll().stream().findFirst().ifPresent(setting -> {
+            setting.setDemoDataLoaded(false);
+            hostelSettingRepository.save(setting);
+        });
 
-        log.info("Created 18 rooms with exactly 70 beds.");
+        log.info("Successfully cleared all dummy data. System is ready for real records with 70 available beds.");
+    }
+
+    public synchronized void seedDemoData() {
+        // Clear non-user collections before demo seed
+        studentRepository.deleteAll();
+        paymentRepository.deleteAll();
+        allocationHistoryRepository.deleteAll();
+
+        // Ensure 16 rooms and 70 beds exist
+        initRoomsAndBeds();
 
         // 2. Seed Sample Students (10 Active, 1 Notice Period, 1 Vacated)
         LocalDate today = LocalDate.now();
@@ -190,7 +234,7 @@ public class DataInitializerService implements CommandLineRunner {
         createDemoStudent("SVBH-2026-006", "V. Mahesh", "V. Subba Rao", "Padma",
                 LocalDate.of(2004, 1, 15), "Male", "9876543220", "mahesh.v@example.com",
                 "678901234567", "Balaji Colony, Tirupati", "Tirupati", "Andhra Pradesh", "517502",
-                today.minusMonths(1), "106", "B106-1", 1, 6500.0, 6000.0, 10,
+                today.minusMonths(1), "103", "B103-2", 2, 4800.0, 5000.0, 10,
                 today.plusDays(25), today.minusDays(5),
                 StudentStatus.ACTIVE, null, null,
                 new EmergencyContact("V. Subba Rao", "Father", "9876543221"));
@@ -268,7 +312,13 @@ public class DataInitializerService implements CommandLineRunner {
         // 4. Sync Room Stats for all rooms
         roomRepository.findAll().forEach(room -> roomService.syncRoomStats(room.getRoomNumber()));
 
-        log.info("Demo data initialized successfully with 70 beds, 18 rooms, 12 students, and payments.");
+        // Mark settings as demo data loaded
+        hostelSettingRepository.findAll().stream().findFirst().ifPresent(setting -> {
+            setting.setDemoDataLoaded(true);
+            hostelSettingRepository.save(setting);
+        });
+
+        log.info("Demo data initialized successfully with 70 beds, 16 rooms across 6 floors, 12 students, and payments.");
     }
 
     private void createRoomWithBeds(String roomNum, int floor, int totalBeds, RoomType type, Double rent, String notes) {
@@ -390,8 +440,8 @@ public class DataInitializerService implements CommandLineRunner {
                 today.minusDays(10), PaymentMethod.UPI, PaymentType.MONTHLY_RENT, "UPI-REF-771122");
 
         // Payments for Mahesh
-        createPayment("REC-2026-0006", "SVBH-2026-006", "V. Mahesh", "106", 1, 6500.0,
-                today.minusDays(5), PaymentMethod.CASH, PaymentType.MONTHLY_RENT, "CASH-REC-106");
+        createPayment("REC-2026-0006", "SVBH-2026-006", "V. Mahesh", "103", 2, 4800.0,
+                today.minusDays(5), PaymentMethod.CASH, PaymentType.MONTHLY_RENT, "CASH-REC-103");
 
         // Payments for Tarun
         createPayment("REC-2026-0007", "SVBH-2026-007", "N. Tarun", "201", 1, 5500.0,
@@ -402,8 +452,8 @@ public class DataInitializerService implements CommandLineRunner {
                 today.minusDays(12), PaymentMethod.CASH, PaymentType.MONTHLY_RENT, "CASH-REC-301");
 
         // Security deposits recorded
-        createPayment("REC-2026-0009", "SVBH-2026-006", "V. Mahesh", "106", 1, 6000.0,
-                today.minusMonths(1), PaymentMethod.UPI, PaymentType.SECURITY_DEPOSIT, "UPI-DEP-6000");
+        createPayment("REC-2026-0009", "SVBH-2026-006", "V. Mahesh", "103", 2, 5000.0,
+                today.minusMonths(1), PaymentMethod.UPI, PaymentType.SECURITY_DEPOSIT, "UPI-DEP-5000");
     }
 
     private void createPayment(String receipt, String studentId, String studentName, String roomNum, int bedNum,

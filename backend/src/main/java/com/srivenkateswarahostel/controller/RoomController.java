@@ -2,6 +2,7 @@ package com.srivenkateswarahostel.controller;
 
 import com.srivenkateswarahostel.dto.ApiResponse;
 import com.srivenkateswarahostel.dto.RoomDto;
+import com.srivenkateswarahostel.dto.RoomUpdateRequest;
 import com.srivenkateswarahostel.service.RoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,8 +52,8 @@ public class RoomController {
     @Operation(summary = "Update room details")
     public ResponseEntity<ApiResponse<RoomDto>> updateRoom(
             @PathVariable String id,
-            @Valid @RequestBody RoomDto roomDto) {
-        RoomDto updated = roomService.updateRoom(id, roomDto);
+            @Valid @RequestBody RoomUpdateRequest request) {
+        RoomDto updated = roomService.updateRoom(id, request);
         return ResponseEntity.ok(ApiResponse.success(updated, "Room updated successfully"));
     }
 

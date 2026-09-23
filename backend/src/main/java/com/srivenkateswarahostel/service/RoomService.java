@@ -1,5 +1,6 @@
 package com.srivenkateswarahostel.service;
 
+import com.srivenkateswarahostel.dto.RoomUpdateRequest;
 import com.srivenkateswarahostel.dto.BedDto;
 import com.srivenkateswarahostel.dto.RoomDto;
 import com.srivenkateswarahostel.exception.BadRequestException;
@@ -85,18 +86,18 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomDto updateRoom(String id, RoomDto roomDto) {
+    public RoomDto updateRoom(String id, RoomUpdateRequest request) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + id));
 
-        room.setFloor(roomDto.getFloor());
-        if (roomDto.getRoomType() != null) {
-            room.setRoomType(roomDto.getRoomType());
+        room.setFloor(request.getFloor());
+        if (request.getRoomType() != null) {
+            room.setRoomType(request.getRoomType());
         }
-        if (roomDto.getDefaultRent() != null) {
-            room.setDefaultRent(roomDto.getDefaultRent());
+        if (request.getDefaultRent() != null) {
+            room.setDefaultRent(request.getDefaultRent());
         }
-        room.setNotes(roomDto.getNotes());
+        room.setNotes(request.getNotes());
         room.setUpdatedAt(LocalDateTime.now());
 
         Room updated = roomRepository.save(room);
