@@ -197,6 +197,197 @@ h1, h2, h3, h4, h5, h6 {
   background: #94a3b8;
 }
 
+/* ==========================================================================
+   Bootstrap 5 & Dashboard Custom Enhancements
+   ========================================================================== */
+
+/* Fix Bootstrap anchor reset */
+a {
+  text-decoration: none;
+}
+
+/* Dashboard Hero Banner */
+.dashboard-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* KPI Metric Cards */
+.dashboard-kpi-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.dashboard-kpi-card .metric-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-kpi-card .metric-val {
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0;
+}
+
+.dashboard-kpi-card .metric-sub {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* KPI Soft Icon Boxes */
+.kpi-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+/* Soft Badges */
+.badge-soft-primary {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-soft-success {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-soft-danger {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca;
+}
+
+.badge-soft-warning {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a;
+}
+
+.badge-soft-info {
+  background-color: #f0f9ff !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd;
+}
+
+.badge-soft-purple {
+  background-color: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border: 1px solid #ddd6fe;
+}
+
+/* Action Buttons */
+.dashboard-btn-primary {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  padding: 8px 18px !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease-in-out !important;
+}
+
+.dashboard-btn-primary:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+.dashboard-btn-outline {
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.dashboard-btn-outline:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  transform: translateY(-1px);
+}
+
+/* Dashboard Table Cards */
+.dashboard-table-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-table-card .card-header-bar {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-table-card table thead th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboard-table-card table tbody td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dashboard-table-card table tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
 /* Print Specific Rules */
 @media print {
   body {

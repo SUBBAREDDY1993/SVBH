@@ -4,22 +4,6 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Grid,
-  LinearProgress,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
   Skeleton,
 } from '@mui/material';
 import HotelIcon from '@mui/icons-material/Hotel';
@@ -83,744 +67,568 @@ export const Dashboard: React.FC = () => {
   if (!stats) return null;
 
   return (
-    <Box sx={{ pb: 4 }}>
-      {/* Welcome Banner */}
-      <Box sx={{ mb: 3.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a' }}>
-            Dashboard Overview
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
-            Sri Venkateswara Boys Hostel Management & Operation Metrics
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/students/new')}
-            sx={{ bgcolor: '#2563eb' }}
-          >
-            + New Admission
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/payments')}
-            sx={{ borderColor: '#cbd5e1', color: '#334155' }}
-          >
-            Record Payment
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<TrendingUpIcon />}
-            onClick={() => navigate('/expenses')}
-            sx={{ borderColor: '#cbd5e1', color: '#334155' }}
-          >
-            Daily Expenses & Profit
-          </Button>
-        </Box>
-      </Box>
+    <div className="pb-5">
+      {/* Top Banner with Bootstrap 5 Layout & Badges */}
+      <div className="row align-items-center justify-content-between mb-4 g-3">
+        <div className="col-12 col-lg-7">
+          <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <span className="badge badge-soft-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5">
+              <i className="bi bi-building"></i> Sri Venkateswara Boys Hostel
+            </span>
+            <span className="badge bg-light text-secondary border rounded-pill px-3 py-1.5 fw-medium">
+              <i className="bi bi-geo-alt me-1 text-danger"></i> SR Nagar, Ameerpet, Hyderabad
+            </span>
+            <span className="badge bg-light text-secondary border rounded-pill px-3 py-1.5 fw-medium">
+              <i className="bi bi-telephone me-1 text-primary"></i> +91 9441843574
+            </span>
+          </div>
+          <h2 className="fw-bolder text-dark mb-1 tracking-tight">
+            Dashboard & Operations Overview
+          </h2>
+          <p className="text-muted mb-0 small">
+            Live occupancy metrics, resident rent status, daily expense ledger, and automated fee reminders
+          </p>
+        </div>
 
-      {/* Alerts section */}
-      {stats.alerts && stats.alerts.length > 0 && (
-        <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {stats.alerts.map((alert, idx) => (
-            <Alert
-              key={idx}
-              severity={idx === 0 && stats.overduePaymentsCount > 0 ? 'error' : 'warning'}
-              sx={{ borderRadius: 2, fontWeight: 500 }}
+        {/* Quick Action Buttons with Bootstrap 5 styles */}
+        <div className="col-12 col-lg-5">
+          <div className="d-flex gap-2 justify-content-lg-end flex-wrap">
+            <button
+              type="button"
+              className="btn btn-primary d-inline-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm rounded-3"
+              onClick={() => navigate('/students/new')}
             >
-              {alert}
-            </Alert>
+              <i className="bi bi-person-plus-fill"></i>
+              <span>New Admission</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary d-inline-flex align-items-center gap-2 fw-semibold px-3 py-2 bg-white rounded-3 shadow-2xs"
+              onClick={() => navigate('/payments')}
+            >
+              <i className="bi bi-credit-card-2-front-fill text-primary"></i>
+              <span>Record Payment</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-success d-inline-flex align-items-center gap-2 fw-semibold px-3 py-2 bg-white rounded-3 shadow-2xs"
+              onClick={() => navigate('/expenses')}
+            >
+              <i className="bi bi-graph-up-arrow text-success"></i>
+              <span>Daily Expenses & Profit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Overdue / High Priority Alerts */}
+      {stats.alerts && stats.alerts.length > 0 && (
+        <div className="mb-4">
+          {stats.alerts.map((alert, idx) => (
+            <div
+              key={idx}
+              className={`alert ${idx === 0 && stats.overduePaymentsCount > 0 ? 'alert-danger border-danger' : 'alert-warning border-warning'} d-flex align-items-center justify-content-between rounded-3 py-2.5 px-3 mb-2 shadow-sm`}
+              role="alert"
+            >
+              <div className="d-flex align-items-center gap-2">
+                <i className={`bi ${idx === 0 && stats.overduePaymentsCount > 0 ? 'bi-exclamation-octagon-fill fs-5 text-danger' : 'bi-exclamation-triangle-fill fs-5 text-warning'}`}></i>
+                <span className="fw-semibold text-dark small">{alert}</span>
+              </div>
+              {idx === 0 && stats.overduePaymentsCount > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger fw-bold rounded-pill px-3 py-1"
+                  onClick={() => navigate('/payments/due')}
+                >
+                  Resolve Overdue <i className="bi bi-arrow-right ms-1"></i>
+                </button>
+              )}
+            </div>
           ))}
-        </Box>
+        </div>
       )}
 
-      {/* 8 Primary Cards: Top 4 Beds, Bottom 4 Financial/Students */}
-      <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-        {/* Total Beds */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #1e3a8a',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  TOTAL CAPACITY
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#0f172a' }}>
-                  {stats.totalBeds}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Configured across 16 rooms
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#eff6ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#1e3a8a',
-                }}
-              >
-                <HotelIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+      {/* 8 Primary KPI Metric Cards (Bootstrap 5 Grid) */}
+      <div className="row g-3 g-xl-4 mb-4">
+        {/* Card 1: Total Capacity */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-primary">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-primary">Total Capacity</span>
+                <div className="metric-val text-dark">{stats.totalBeds}</div>
+                <div className="metric-sub text-muted">
+                  <i className="bi bi-door-open me-1"></i> Across 16 rooms (6 floors)
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-primary">
+                <HotelIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Occupied Beds */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #ef4444',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#b91c1c', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  OCCUPIED BEDS
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#dc2626' }}>
-                  {stats.occupiedBeds}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#dc2626', fontWeight: 600 }}>
-                  {stats.occupancyPercentage}% current occupancy
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#fef2f2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ef4444',
-                }}
-              >
-                <DoNotDisturbAltIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 2: Occupied Beds */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-danger">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-danger">Occupied Beds</span>
+                <div className="metric-val text-danger">{stats.occupiedBeds}</div>
+                <div className="metric-sub text-danger fw-semibold">
+                  <i className="bi bi-pie-chart-fill me-1"></i> {stats.occupancyPercentage}% current occupancy
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-danger">
+                <DoNotDisturbAltIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Available Beds */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #10b981',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#047857', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  AVAILABLE BEDS
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#059669' }}>
-                  {stats.availableBeds}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>
-                  Ready for admission
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#ecfdf5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#10b981',
-                }}
-              >
-                <CheckCircleIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 3: Available Beds */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-success">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-success">Available Beds</span>
+                <div className="metric-val text-success">{stats.availableBeds}</div>
+                <div className="metric-sub text-success fw-semibold">
+                  <i className="bi bi-check-circle-fill me-1"></i> Ready for intake
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-success">
+                <CheckCircleIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Reserved Beds */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #f59e0b',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#b45309', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  RESERVED BEDS
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#d97706' }}>
-                  {stats.reservedBeds}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  Advance hold bookings
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#fffbeb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#f59e0b',
-                }}
-              >
-                <BookmarkIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 4: Reserved Beds */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-warning">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-warning">Reserved Beds</span>
+                <div className="metric-val text-warning">{stats.reservedBeds}</div>
+                <div className="metric-sub text-muted">
+                  <i className="bi bi-bookmark-fill me-1 text-warning"></i> Advance hold bookings
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-warning">
+                <BookmarkIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Total Students */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #3b82f6',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#1d4ed8', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  ACTIVE RESIDENTS
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#1e40af' }}>
-                  {stats.totalStudents}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  {stats.activeStudents} Active • {stats.noticePeriodStudents} Notice
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#eff6ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#2563eb',
-                }}
-              >
-                <PeopleAltIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 5: Total Residents */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-info">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-info">Active Residents</span>
+                <div className="metric-val text-dark">{stats.totalStudents}</div>
+                <div className="metric-sub text-muted">
+                  <span className="badge badge-soft-success me-1">{stats.activeStudents} Active</span>
+                  <span className="badge badge-soft-purple">{stats.noticePeriodStudents} Notice</span>
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-info">
+                <PeopleAltIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Pending Payments */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #dc2626',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#b91c1c', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  PENDING DUES
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#dc2626' }}>
-                  ₹{stats.totalPendingAmount?.toLocaleString('en-IN')}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 600 }}>
-                  {stats.overduePaymentsCount} resident(s) overdue
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#fef2f2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#dc2626',
-                }}
-              >
-                <AccountBalanceWalletIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 6: Pending Dues */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-danger">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-danger">Pending Dues</span>
+                <div className="metric-val text-danger">₹{stats.totalPendingAmount?.toLocaleString('en-IN')}</div>
+                <div className="metric-sub text-danger fw-semibold">
+                  <i className="bi bi-clock-history me-1"></i> {stats.overduePaymentsCount} resident(s) overdue
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-danger">
+                <AccountBalanceWalletIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Due Soon */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #f59e0b',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#b45309', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  DUE WITHIN 7 DAYS
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#b45309' }}>
-                  {stats.paymentsDueSoonCount}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  Upcoming billing dates
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#fffbeb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#f59e0b',
-                }}
-              >
-                <NotificationImportantIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
+        {/* Card 7: Due Soon (7 Days) */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-warning">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-warning">Due Within 7 Days</span>
+                <div className="metric-val text-dark">{stats.paymentsDueSoonCount}</div>
+                <div className="metric-sub text-muted">
+                  <i className="bi bi-calendar-event me-1"></i> Upcoming rent cycle
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-warning">
+                <NotificationImportantIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Students Leaving Soon */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            className="pro-card"
-            sx={{
-              p: 2.5,
-              position: 'relative',
-              overflow: 'hidden',
-              borderTop: '4px solid #6366f1',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#4338ca', fontWeight: 700, letterSpacing: '0.04em' }}>
-                  DEPARTURES SOON
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, my: 0.75, color: '#4338ca' }}>
-                  {stats.studentsLeavingSoonCount}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  Notice period active
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 2.5,
-                  bgcolor: '#eef2ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#6366f1',
-                }}
-              >
-                <ExitToAppIcon sx={{ fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Card 8: Notice Period Departures */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-secondary">
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-secondary">Departures Soon</span>
+                <div className="metric-val text-dark">{stats.studentsLeavingSoonCount}</div>
+                <div className="metric-sub text-muted">
+                  <i className="bi bi-box-arrow-right me-1"></i> 15-day notice active
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-purple">
+                <ExitToAppIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Occupancy Progress Bar Section */}
-      <Card className="pro-card" sx={{ mb: 3.5, p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Hostel Capacity & Occupancy Rate
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
-              {stats.occupiedBeds} out of {stats.totalBeds} beds occupied ({stats.availableBeds} beds available for immediate booking)
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: stats.occupancyPercentage > 85 ? '#dc2626' : '#2563eb' }}>
-              {stats.occupancyPercentage}%
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>Total utilization</Typography>
-          </Box>
-        </Box>
-        <LinearProgress
-          variant="determinate"
-          value={Math.min(stats.occupancyPercentage, 100)}
-          sx={{
-            height: 10,
-            borderRadius: 5,
-            bgcolor: '#e2e8f0',
-            '& .MuiLinearProgress-bar': {
-              bgcolor: stats.occupancyPercentage > 85 ? '#ef4444' : stats.occupancyPercentage > 50 ? '#3b82f6' : '#10b981',
-              borderRadius: 5,
-            },
-          }}
-        />
-      </Card>
+      {/* Hostel Capacity & Occupancy Bar (Bootstrap 5 Progress) */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <h5 className="fw-bold text-dark mb-1">
+              Hostel Capacity & Live Utilization Rate
+            </h5>
+            <p className="text-muted small mb-0">
+              {stats.occupiedBeds} out of {stats.totalBeds} beds occupied • {stats.availableBeds} beds available for immediate booking
+            </p>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className={`badge ${stats.occupancyPercentage > 85 ? 'bg-danger' : stats.occupancyPercentage > 50 ? 'bg-primary' : 'bg-success'} fs-6 px-3 py-1.5 rounded-pill`}>
+              {stats.occupancyPercentage}% Occupied
+            </span>
+          </div>
+        </div>
 
-      {/* Daily Expenses & Profit Summary Banner */}
-      <Card
-        className="pro-card"
-        sx={{
-          mb: 3.5,
-          p: 3,
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          color: '#ffffff',
-          borderRadius: 3,
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
-        }}
-      >
-        <Grid container spacing={2.5} alignItems="center">
-          <Grid item xs={12} md={7}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 2,
-                  bgcolor: 'rgba(16, 185, 129, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#10b981',
-                }}
-              >
-                <TrendingUpIcon sx={{ fontSize: 24 }} />
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc' }}>
+        {/* Bootstrap 5 Animated Progress Bar */}
+        <div className="progress rounded-pill bg-light" style={{ height: '14px' }}>
+          <div
+            className={`progress-bar progress-bar-striped progress-bar-animated ${stats.occupancyPercentage > 85 ? 'bg-danger' : stats.occupancyPercentage > 50 ? 'bg-primary' : 'bg-success'}`}
+            role="progressbar"
+            style={{ width: `${Math.min(stats.occupancyPercentage, 100)}%` }}
+            aria-valuenow={stats.occupancyPercentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          ></div>
+        </div>
+
+        {/* Quick stat legend strip */}
+        <div className="d-flex justify-content-between mt-3 pt-2 border-top text-muted small flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-danger rounded-circle p-1"></span>
+            <span>Occupied: <strong>{stats.occupiedBeds}</strong></span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-success rounded-circle p-1"></span>
+            <span>Available: <strong>{stats.availableBeds}</strong></span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-warning rounded-circle p-1"></span>
+            <span>Reserved: <strong>{stats.reservedBeds}</strong></span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-secondary rounded-circle p-1"></span>
+            <span>Total Capacity: <strong>{stats.totalBeds} Beds</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Daily Expenses & Profit Summary Banner (Bootstrap 5 Dark Gradient Card) */}
+      <div className="card border-0 rounded-4 shadow-sm p-4 mb-4 text-white" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+        <div className="row align-items-center g-3">
+          <div className="col-12 col-md-7">
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <div className="kpi-icon-box bg-success bg-opacity-25 text-success rounded-3">
+                <i className="bi bi-cash-stack fs-4 text-success"></i>
+              </div>
+              <h5 className="fw-bolder text-white mb-0">
                 Daily Expenses & Net Profit Tracking
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: '#94a3b8', lineHeight: 1.6 }}>
-              Maintain daily operational expenses (Mess & Food, Electricity & Water, Repairs, Salaries) and monitor monthly profit & loss statements against resident fee collections in real time.
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/expenses')}
-              sx={{
-                bgcolor: '#10b981',
-                color: '#ffffff',
-                fontWeight: 700,
-                px: 2.5,
-                py: 1,
-                borderRadius: 2,
-                '&:hover': { bgcolor: '#059669' },
-              }}
-            >
-              Open Expense Ledger
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/expenses')}
-              sx={{
-                borderColor: 'rgba(255, 255, 255, 0.3)',
-                color: '#f8fafc',
-                fontWeight: 600,
-                px: 2,
-                py: 1,
-                borderRadius: 2,
-                '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255, 255, 255, 0.08)' },
-              }}
-            >
-              P&L Analysis
-            </Button>
-          </Grid>
-        </Grid>
-      </Card>
+              </h5>
+            </div>
+            <p className="text-secondary small mb-3">
+              Maintain daily hostel expenditures (Mess/Food groceries, Electricity bills, Repairs, Salaries) and monitor real-time monthly Net Profit statements against resident fee collections.
+            </p>
+            <div className="d-flex gap-2 flex-wrap">
+              <span className="badge bg-dark border border-secondary text-light small px-2.5 py-1">
+                <i className="bi bi-egg-fried me-1 text-warning"></i> Mess & Food
+              </span>
+              <span className="badge bg-dark border border-secondary text-light small px-2.5 py-1">
+                <i className="bi bi-lightning-charge me-1 text-info"></i> Electricity & Water
+              </span>
+              <span className="badge bg-dark border border-secondary text-light small px-2.5 py-1">
+                <i className="bi bi-tools me-1 text-danger"></i> Maintenance
+              </span>
+              <span className="badge bg-dark border border-secondary text-light small px-2.5 py-1">
+                <i className="bi bi-people me-1 text-primary"></i> Staff Salaries
+              </span>
+            </div>
+          </div>
+          <div className="col-12 col-md-5">
+            <div className="d-flex gap-2 justify-content-md-end flex-wrap">
+              <button
+                type="button"
+                className="btn btn-success d-inline-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-3 shadow-sm"
+                onClick={() => navigate('/expenses')}
+              >
+                <i className="bi bi-journal-plus"></i> Open Expense Ledger
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-light d-inline-flex align-items-center gap-2 fw-semibold px-3 py-2 rounded-3"
+                onClick={() => navigate('/expenses')}
+              >
+                <i className="bi bi-bar-chart-line"></i> P&L Analysis
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Dual Table Section: Upcoming Dues & Recent Admissions */}
-      <Grid container spacing={3} sx={{ mb: 3.5 }}>
-        {/* Upcoming Dues / Overdue */}
-        <Grid item xs={12} lg={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 3, height: '100%', border: '1px solid #e2e8f0' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                  Upcoming & Overdue Rent Dues
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  Fees requiring immediate attention
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                endIcon={<ArrowForwardIcon />}
+      <div className="row g-3 g-xl-4 mb-4">
+        {/* Table 1: Upcoming & Overdue Rent Dues */}
+        <div className="col-12 col-lg-6">
+          <div className="dashboard-table-card h-100">
+            <div className="card-header-bar">
+              <div>
+                <h6 className="fw-bold text-dark mb-0">Upcoming & Overdue Rent Dues</h6>
+                <span className="text-muted small">Resident fees requiring immediate attention</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-decoration-none fw-bold text-primary p-0 d-inline-flex align-items-center gap-1"
                 onClick={() => navigate('/payments/due')}
-                sx={{ fontWeight: 700 }}
               >
-                View All
-              </Button>
-            </Box>
+                <span>View All</span>
+                <i className="bi bi-arrow-right"></i>
+              </button>
+            </div>
 
             {stats.upcomingDues && stats.upcomingDues.length > 0 ? (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Resident</TableCell>
-                      <TableCell>Room / Bed</TableCell>
-                      <TableCell>Due Date</TableCell>
-                      <TableCell>Rent Amount</TableCell>
-                      <TableCell align="right">Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Resident</th>
+                      <th>Room / Bed</th>
+                      <th>Due Date</th>
+                      <th>Rent</th>
+                      <th className="text-end">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {stats.upcomingDues.slice(0, 5).map((due) => (
-                      <TableRow key={due.studentId} hover>
-                        <TableCell sx={{ fontWeight: 700 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 26, height: 26, fontSize: '0.75rem', bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 800 }}>
+                      <tr key={due.studentId}>
+                        <td>
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="avatar rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style={{ width: '30px', height: '30px', fontSize: '0.8rem' }}>
                               {due.studentName?.charAt(0) || 'R'}
-                            </Avatar>
-                            {due.studentName}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={`Room ${due.roomNumber}`} size="small" variant="outlined" sx={{ mr: 0.5 }} />
-                          <Chip label={due.bedId} size="small" sx={{ bgcolor: '#f1f5f9' }} />
-                        </TableCell>
-                        <TableCell>{due.nextPaymentDueDate}</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: '#dc2626' }}>
-                          ₹{due.monthlyRent?.toLocaleString('en-IN')}
-                        </TableCell>
-                        <TableCell align="right">
+                            </div>
+                            <span className="fw-semibold text-dark">{due.studentName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="badge bg-light text-dark border me-1">Rm {due.roomNumber}</span>
+                          <span className="badge badge-soft-primary">{due.bedId}</span>
+                        </td>
+                        <td className="small text-muted">{due.nextPaymentDueDate}</td>
+                        <td className="fw-bold text-danger">₹{due.monthlyRent?.toLocaleString('en-IN')}</td>
+                        <td className="text-end">
                           <StatusChip status={due.dueCategory} />
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <Box sx={{ py: 4, textAlign: 'center' }}>
-                <CheckCircleIcon sx={{ fontSize: 36, color: '#10b981', mb: 1 }} />
-                <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600 }}>
-                  All rents are currently settled
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                  No pending or overdue payments recorded in the system.
-                </Typography>
-              </Box>
+              <div className="p-4 text-center">
+                <i className="bi bi-check2-circle fs-1 text-success mb-2 d-block"></i>
+                <h6 className="fw-bold text-dark">All Rents Settled</h6>
+                <p className="text-muted small mb-0">No overdue or pending rent payments recorded.</p>
+              </div>
             )}
-          </Paper>
-        </Grid>
+          </div>
+        </div>
 
-        {/* Recent Admissions */}
-        <Grid item xs={12} lg={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 3, height: '100%', border: '1px solid #e2e8f0' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                  Recent Student Admissions
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                  Latest resident registrations
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                endIcon={<ArrowForwardIcon />}
+        {/* Table 2: Recent Student Admissions */}
+        <div className="col-12 col-lg-6">
+          <div className="dashboard-table-card h-100">
+            <div className="card-header-bar">
+              <div>
+                <h6 className="fw-bold text-dark mb-0">Recent Admissions</h6>
+                <span className="text-muted small">Latest resident registrations in SVBH</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-decoration-none fw-bold text-primary p-0 d-inline-flex align-items-center gap-1"
                 onClick={() => navigate('/students')}
-                sx={{ fontWeight: 700 }}
               >
-                View All
-              </Button>
-            </Box>
+                <span>View All</span>
+                <i className="bi bi-arrow-right"></i>
+              </button>
+            </div>
 
             {stats.recentAdmissions && stats.recentAdmissions.length > 0 ? (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Student</TableCell>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Allocation</TableCell>
-                      <TableCell>Joining Date</TableCell>
-                      <TableCell align="right">Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Resident</th>
+                      <th>Student ID</th>
+                      <th>Allocation</th>
+                      <th>Joining</th>
+                      <th className="text-end">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {stats.recentAdmissions.slice(0, 5).map((student) => (
-                      <TableRow
+                      <tr
                         key={student.id}
-                        hover
-                        sx={{ cursor: 'pointer' }}
+                        style={{ cursor: 'pointer' }}
                         onClick={() => navigate(`/students/${student.studentId}`)}
                       >
-                        <TableCell sx={{ fontWeight: 700 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar sx={{ width: 26, height: 26, fontSize: '0.75rem', bgcolor: '#ecfdf5', color: '#047857', fontWeight: 800 }}>
+                        <td>
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="avatar rounded-circle bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center" style={{ width: '30px', height: '30px', fontSize: '0.8rem' }}>
                               {student.fullName?.charAt(0) || 'S'}
-                            </Avatar>
-                            {student.fullName}
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: '#1e3a8a' }}>
-                          {student.studentId}
-                        </TableCell>
-                        <TableCell>
+                            </div>
+                            <span className="fw-semibold text-dark">{student.fullName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="badge bg-light text-primary border font-monospace">{student.studentId}</span>
+                        </td>
+                        <td className="small">
                           Room {student.roomNumber} ({student.bedId})
-                        </TableCell>
-                        <TableCell>{student.joiningDate}</TableCell>
-                        <TableCell align="right">
+                        </td>
+                        <td className="small text-muted">{student.joiningDate}</td>
+                        <td className="text-end">
                           <StatusChip status={student.status} />
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <Box sx={{ py: 4, textAlign: 'center' }}>
-                <PeopleAltIcon sx={{ fontSize: 36, color: '#cbd5e1', mb: 1 }} />
-                <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600 }}>
-                  No residents admitted yet
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mb: 2 }}>
-                  Database is clean and ready for new admissions.
-                </Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
+              <div className="p-4 text-center">
+                <i className="bi bi-person-x fs-1 text-muted mb-2 d-block"></i>
+                <h6 className="fw-bold text-dark">No Admissions Yet</h6>
+                <p className="text-muted small mb-3">Database is clean and ready for onboarding.</p>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary rounded-3 fw-semibold px-3"
                   onClick={() => navigate('/students/new')}
-                  sx={{ fontWeight: 700 }}
                 >
                   Admit First Resident
-                </Button>
-              </Box>
+                </button>
+              </div>
             )}
-          </Paper>
-        </Grid>
-      </Grid>
+          </div>
+        </div>
+      </div>
 
-      {/* Recent Payments Section */}
-      <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid #e2e8f0' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Recent Payment Transactions
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>
-              Confirmed fee collection receipts
-            </Typography>
-          </Box>
-          <Button
-            size="small"
-            endIcon={<ArrowForwardIcon />}
+      {/* Recent Payments Section (Bootstrap 5 Table Card) */}
+      <div className="dashboard-table-card">
+        <div className="card-header-bar">
+          <div>
+            <h6 className="fw-bold text-dark mb-0">Recent Payment Transactions</h6>
+            <span className="text-muted small">Confirmed fee collection receipts and payment vouchers</span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-sm btn-link text-decoration-none fw-bold text-primary p-0 d-inline-flex align-items-center gap-1"
             onClick={() => navigate('/payments')}
-            sx={{ fontWeight: 700 }}
           >
-            View All Payments
-          </Button>
-        </Box>
+            <span>View All Payments</span>
+            <i className="bi bi-arrow-right"></i>
+          </button>
+        </div>
 
         {stats.recentPayments && stats.recentPayments.length > 0 ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Receipt No</TableCell>
-                  <TableCell>Resident</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Payment Mode</TableCell>
-                  <TableCell>Fee Category</TableCell>
-                  <TableCell align="right">Receipt</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Receipt No</th>
+                  <th>Resident</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Payment Mode</th>
+                  <th>Fee Category</th>
+                  <th className="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
                 {stats.recentPayments.slice(0, 5).map((payment) => (
-                  <TableRow key={payment.id} hover>
-                    <TableCell sx={{ fontWeight: 800, color: '#1e3a8a' }}>
-                      {payment.receiptNumber}
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{payment.studentName}</TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: '#059669', fontSize: '0.95rem' }}>
-                      ₹{payment.amount?.toLocaleString('en-IN')}
-                    </TableCell>
-                    <TableCell>{payment.paymentDate}</TableCell>
-                    <TableCell>
-                      <Chip label={payment.paymentMethod} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell>{payment.paymentType?.replace('_', ' ')}</TableCell>
-                    <TableCell align="right">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<ReceiptIcon />}
+                  <tr key={payment.id}>
+                    <td>
+                      <span className="badge badge-soft-primary font-monospace fw-bold px-2.5 py-1">
+                        {payment.receiptNumber}
+                      </span>
+                    </td>
+                    <td className="fw-semibold text-dark">{payment.studentName}</td>
+                    <td>
+                      <span className="fw-bolder text-success fs-6">
+                        ₹{payment.amount?.toLocaleString('en-IN')}
+                      </span>
+                    </td>
+                    <td className="small text-muted">{payment.paymentDate}</td>
+                    <td>
+                      <span className="badge bg-light text-dark border px-2.5 py-1">
+                        {payment.paymentMethod}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="small text-secondary text-capitalize">
+                        {payment.paymentType?.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="text-end">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 rounded-pill px-3 py-1 fw-bold shadow-2xs"
                         onClick={() => openReceipt(payment)}
-                        sx={{ fontSize: '0.75rem', fontWeight: 700 }}
                       >
-                        Receipt
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        <i className="bi bi-printer"></i>
+                        <span>Receipt</span>
+                      </button>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <ReceiptIcon sx={{ fontSize: 36, color: '#cbd5e1', mb: 1 }} />
-            <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600 }}>
-              No payments recorded yet
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-              Transactions will appear here once resident rents or security deposits are collected.
-            </Typography>
-          </Box>
+          <div className="p-5 text-center">
+            <i className="bi bi-receipt fs-1 text-muted mb-2 d-block"></i>
+            <h6 className="fw-bold text-dark">No Payment Transactions Recorded</h6>
+            <p className="text-muted small mb-0">Collected fees and receipts will appear here automatically.</p>
+          </div>
         )}
-      </Paper>
+      </div>
 
-      {/* Receipt Modal */}
+      {/* Printable Receipt Modal */}
       <ReceiptModal
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
         payment={selectedPayment}
       />
-    </Box>
+    </div>
   );
 };
