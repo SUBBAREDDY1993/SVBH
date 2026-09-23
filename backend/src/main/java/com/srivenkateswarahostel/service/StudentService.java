@@ -309,11 +309,13 @@ public class StudentService {
         LocalDate today = LocalDate.now();
         boolean overdue = false;
         long daysOverdue = 0;
+        String paymentStatus = "PAID";
 
         if (student.getStatus() != StudentStatus.VACATED && student.getNextPaymentDueDate() != null) {
             if (today.isAfter(student.getNextPaymentDueDate())) {
                 overdue = true;
                 daysOverdue = ChronoUnit.DAYS.between(student.getNextPaymentDueDate(), today);
+                paymentStatus = "PENDING";
             }
         }
 
@@ -350,6 +352,7 @@ public class StudentService {
                 .vacateInfo(student.getVacateInfo())
                 .isOverdue(overdue)
                 .daysOverdue(daysOverdue)
+                .paymentStatus(paymentStatus)
                 .createdAt(student.getCreatedAt())
                 .updatedAt(student.getUpdatedAt())
                 .build();

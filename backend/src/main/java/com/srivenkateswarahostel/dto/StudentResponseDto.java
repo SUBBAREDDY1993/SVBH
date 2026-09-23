@@ -56,6 +56,7 @@ public class StudentResponseDto {
 
     private boolean isOverdue;
     private long daysOverdue;
+    private String paymentStatus; // "PAID", "PENDING"
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -30,8 +30,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PeopleIcon from '@mui/icons-material/People';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ClearIcon from '@mui/icons-material/Clear';
 import { studentService } from '../services/studentService';
 import { reportService } from '../services/reportService';
@@ -51,6 +50,7 @@ export const Students: React.FC = () => {
 
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<StudentStatus | ''>('');
+  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -108,11 +108,35 @@ export const Students: React.FC = () => {
     reportService.downloadStudentsCsv();
   };
 
-  // KPI calculations
+  // Payment status calculation helpers
+  const isPending = (s: Student): boolean => {
+    if (s.status === 'VACATED') return false;
+    if (s.paymentStatus === 'PENDING') return true;
+    if (s.isOverdue) return true;
+    if (s.nextPaymentDueDate) {
+      const today = new Date().toISOString().split('T')[0];
+      return s.nextPaymentDueDate < today;
+    }
+    return false;
+  };
+
+  const isPaid = (s: Student): boolean => {
+    if (s.status === 'VACATED') return true;
+    return !isPending(s);
+  };
+
+  // KPI calculations based on all students
   const totalCount = allStudents.length;
   const activeCount = allStudents.filter((s) => s.status === 'ACTIVE').length;
-  const noticeCount = allStudents.filter((s) => s.status === 'NOTICE_PERIOD').length;
-  const vacatedCount = allStudents.filter((s) => s.status === 'VACATED').length;
+  const paidCount = allStudents.filter(isPaid).length;
+  const pendingCount = allStudents.filter(isPending).length;
+
+  // Filter students based on payment status toggle button
+  const displayedStudents = students.filter((s) => {
+    if (paymentFilter === 'PAID') return isPaid(s);
+    if (paymentFilter === 'PENDING') return isPending(s);
+    return true;
+  });
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -157,16 +181,20 @@ export const Students: React.FC = () => {
         </Box>
       </Box>
 
-      {/* KPI Metric Filter Cards */}
+      {/* KPI Metric Cards (Total, Active, Fee Paid, Fee Pending) */}
       <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+        {/* Total Enrolled */}
         <Grid item xs={12} sm={6} md={3}>
           <Card
             className="pro-card"
-            onClick={() => setStatusFilter('')}
+            onClick={() => {
+              setPaymentFilter('ALL');
+              setStatusFilter('');
+            }}
             sx={{
               cursor: 'pointer',
-              borderTop: statusFilter === '' ? '4px solid #2563eb' : '4px solid transparent',
-              bgcolor: statusFilter === '' ? '#f0f7ff' : '#ffffff',
+              borderTop: paymentFilter === 'ALL' && statusFilter === '' ? '4px solid #2563eb' : '4px solid transparent',
+              bgcolor: paymentFilter === 'ALL' && statusFilter === '' ? '#f0f7ff' : '#ffffff',
               transition: 'all 0.2s ease',
             }}
           >
@@ -181,100 +209,188 @@ export const Students: React.FC = () => {
                 {totalCount}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
-                {statusFilter === '' ? 'Showing all records' : 'Click to view all'}
+                All registered residents
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
+        {/* Active Residents */}
         <Grid item xs={12} sm={6} md={3}>
           <Card
             className="pro-card"
-            onClick={() => setStatusFilter('ACTIVE')}
+            onClick={() => {
+              setStatusFilter('ACTIVE');
+              setPaymentFilter('ALL');
+            }}
             sx={{
               cursor: 'pointer',
-              borderTop: statusFilter === 'ACTIVE' ? '4px solid #10b981' : '4px solid transparent',
-              bgcolor: statusFilter === 'ACTIVE' ? '#f0fdf4' : '#ffffff',
+              borderTop: statusFilter === 'ACTIVE' && paymentFilter === 'ALL' ? '4px solid #3b82f6' : '4px solid transparent',
+              bgcolor: statusFilter === 'ACTIVE' && paymentFilter === 'ALL' ? '#eff6ff' : '#ffffff',
               transition: 'all 0.2s ease',
             }}
           >
             <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Active Residents
                 </Typography>
-                <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: 22 }} />
+                <PeopleIcon sx={{ color: '#3b82f6', fontSize: 22 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#047857' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#1e40af' }}>
                 {activeCount}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
                 Currently in hostel beds
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
+        {/* Fee Paid Button Card */}
         <Grid item xs={12} sm={6} md={3}>
           <Card
             className="pro-card"
-            onClick={() => setStatusFilter('NOTICE_PERIOD')}
+            onClick={() => {
+              setPaymentFilter('PAID');
+              setPage(0);
+            }}
             sx={{
               cursor: 'pointer',
-              borderTop: statusFilter === 'NOTICE_PERIOD' ? '4px solid #f59e0b' : '4px solid transparent',
-              bgcolor: statusFilter === 'NOTICE_PERIOD' ? '#fffbeb' : '#ffffff',
+              borderTop: paymentFilter === 'PAID' ? '4px solid #10b981' : '4px solid transparent',
+              bgcolor: paymentFilter === 'PAID' ? '#f0fdf4' : '#ffffff',
+              boxShadow: paymentFilter === 'PAID' ? '0 8px 20px -4px rgba(16, 185, 129, 0.2)' : undefined,
               transition: 'all 0.2s ease',
             }}
           >
             <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Notice Period
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Fee Paid (Done)
                 </Typography>
-                <HourglassEmptyIcon sx={{ color: '#f59e0b', fontSize: 22 }} />
+                <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: 22 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#b45309' }}>
-                {noticeCount}
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#047857' }}>
+                {paidCount}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 600 }}>
-                Pending vacate date
+              <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>
+                {paymentFilter === 'PAID' ? '✓ Filter Active (Paid Only)' : 'Click to show paid residents'}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
+        {/* Fee Pending Button Card */}
         <Grid item xs={12} sm={6} md={3}>
           <Card
             className="pro-card"
-            onClick={() => setStatusFilter('VACATED')}
+            onClick={() => {
+              setPaymentFilter('PENDING');
+              setPage(0);
+            }}
             sx={{
               cursor: 'pointer',
-              borderTop: statusFilter === 'VACATED' ? '4px solid #64748b' : '4px solid transparent',
-              bgcolor: statusFilter === 'VACATED' ? '#f8fafc' : '#ffffff',
+              borderTop: paymentFilter === 'PENDING' ? '4px solid #ef4444' : '4px solid transparent',
+              bgcolor: paymentFilter === 'PENDING' ? '#fef2f2' : '#ffffff',
+              boxShadow: paymentFilter === 'PENDING' ? '0 8px 20px -4px rgba(239, 68, 68, 0.2)' : undefined,
               transition: 'all 0.2s ease',
             }}
           >
             <CardContent sx={{ p: 2.2, '&:last-child': { pb: 2.2 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Vacated
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Fee Pending
                 </Typography>
-                <ExitToAppIcon sx={{ color: '#64748b', fontSize: 22 }} />
+                <ErrorOutlineIcon sx={{ color: '#ef4444', fontSize: 22 }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#475569' }}>
-                {vacatedCount}
+              <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: '#dc2626' }}>
+                {pendingCount}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
-                Past residents archive
+              <Typography variant="caption" sx={{ color: '#dc2626', fontWeight: 600 }}>
+                {paymentFilter === 'PENDING' ? '⚠ Filter Active (Pending Only)' : 'Click to show pending dues'}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Filter and Search Bar */}
+      {/* Filter and Search Bar with the 2 Status Buttons */}
       <Card className="pro-card" sx={{ mb: 3 }}>
         <CardContent sx={{ p: 2.5 }}>
+          {/* Dedicated 2 Status Buttons Toolbar */}
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-3 mb-3 border-bottom">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <span className="text-muted fw-bold small text-uppercase me-1">
+                <i className="bi bi-funnel-fill text-primary me-1"></i> Payment Filter:
+              </span>
+
+              {/* Button 1: Fee Paid */}
+              <button
+                type="button"
+                className={`btn btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold transition-all shadow-2xs ${
+                  paymentFilter === 'PAID'
+                    ? 'btn-success text-white shadow-sm'
+                    : 'btn-outline-success bg-white text-success'
+                }`}
+                onClick={() => {
+                  setPaymentFilter(paymentFilter === 'PAID' ? 'ALL' : 'PAID');
+                  setPage(0);
+                }}
+              >
+                <i className="bi bi-check-circle-fill"></i>
+                <span>Fee Paid</span>
+                <span className={`badge ${paymentFilter === 'PAID' ? 'bg-white text-success' : 'bg-success text-white'} rounded-pill ms-1`}>
+                  {paidCount}
+                </span>
+              </button>
+
+              {/* Button 2: Fee Pending */}
+              <button
+                type="button"
+                className={`btn btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold transition-all shadow-2xs ${
+                  paymentFilter === 'PENDING'
+                    ? 'btn-danger text-white shadow-sm'
+                    : 'btn-outline-danger bg-white text-danger'
+                }`}
+                onClick={() => {
+                  setPaymentFilter(paymentFilter === 'PENDING' ? 'ALL' : 'PENDING');
+                  setPage(0);
+                }}
+              >
+                <i className="bi bi-clock-history"></i>
+                <span>Fee Pending</span>
+                <span className={`badge ${paymentFilter === 'PENDING' ? 'bg-white text-danger' : 'bg-danger text-white'} rounded-pill ms-1`}>
+                  {pendingCount}
+                </span>
+              </button>
+
+              {/* All Residents Reset Button */}
+              {paymentFilter !== 'ALL' && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-light border text-muted d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-semibold"
+                  onClick={() => {
+                    setPaymentFilter('ALL');
+                    setPage(0);
+                  }}
+                >
+                  <i className="bi bi-x-circle"></i>
+                  <span>Clear Filter ({totalCount})</span>
+                </button>
+              )}
+            </div>
+
+            {/* Filter indication */}
+            {paymentFilter !== 'ALL' && (
+              <div className="small fw-semibold text-muted">
+                Showing <strong>{displayedStudents.length}</strong> resident(s) with status:
+                <span className={`badge ms-1.5 px-2.5 py-1 rounded-pill ${paymentFilter === 'PAID' ? 'bg-success' : 'bg-danger'}`}>
+                  {paymentFilter === 'PAID' ? '✓ PAID' : '⚠ PENDING'}
+                </span>
+              </div>
+            )}
+          </div>
+
           <Grid container spacing={2} alignItems="center" component="form" onSubmit={handleSearchSubmit}>
             <Grid item xs={12} sm={6} md={5}>
               <TextField
@@ -304,23 +420,26 @@ export const Students: React.FC = () => {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4} md={3}>
+            <Grid item xs={12} sm={4} md={4}>
               <TextField
                 select
                 size="small"
                 fullWidth
-                label="Filter by Status"
+                label="Filter by Resident Status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as StudentStatus | '')}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as StudentStatus | '');
+                  setPage(0);
+                }}
               >
-                <MenuItem value="">All Statuses ({totalCount})</MenuItem>
+                <MenuItem value="">All Resident Types ({totalCount})</MenuItem>
                 <MenuItem value="ACTIVE">Active Residents ({activeCount})</MenuItem>
-                <MenuItem value="NOTICE_PERIOD">Notice Period ({noticeCount})</MenuItem>
-                <MenuItem value="VACATED">Vacated Residents ({vacatedCount})</MenuItem>
+                <MenuItem value="NOTICE_PERIOD">Notice Period ({allStudents.filter((s) => s.status === 'NOTICE_PERIOD').length})</MenuItem>
+                <MenuItem value="VACATED">Vacated Residents ({allStudents.filter((s) => s.status === 'VACATED').length})</MenuItem>
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={2} md={2}>
+            <Grid item xs={12} sm={2} md={3}>
               <Button type="submit" variant="contained" fullWidth sx={{ bgcolor: '#1e3a8a', py: 0.9, fontWeight: 700 }}>
                 Search
               </Button>
@@ -335,7 +454,7 @@ export const Students: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}>
             <CircularProgress />
           </Box>
-        ) : students.length === 0 ? (
+        ) : displayedStudents.length === 0 ? (
           <Box sx={{ p: 6, textAlign: 'center' }}>
             <Box
               sx={{
@@ -352,19 +471,35 @@ export const Students: React.FC = () => {
               <PeopleIcon sx={{ fontSize: 32, color: '#94a3b8' }} />
             </Box>
             <Typography variant="h6" sx={{ color: '#334155', fontWeight: 800 }}>
-              No residents registered yet
+              {paymentFilter === 'PAID'
+                ? 'No students found with Paid status'
+                : paymentFilter === 'PENDING'
+                ? 'No students found with Pending fees'
+                : 'No residents registered yet'}
             </Typography>
             <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1, mb: 3, maxWidth: 440, mx: 'auto' }}>
-              Your database is clean and ready for real hostel records. Click below to enroll your first resident into Sri Venkateswara Boys Hostel.
+              {paymentFilter !== 'ALL'
+                ? 'Try resetting the payment filter or searching with different keywords.'
+                : 'Your database is clean and ready for real hostel records.'}
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<PersonAddIcon />}
-              onClick={() => navigate('/students/admit')}
-              sx={{ bgcolor: '#2563eb', fontWeight: 700, px: 3, py: 1 }}
-            >
-              Admit First Student
-            </Button>
+            {paymentFilter !== 'ALL' ? (
+              <Button
+                variant="outlined"
+                onClick={() => setPaymentFilter('ALL')}
+                sx={{ fontWeight: 700, px: 3, py: 1 }}
+              >
+                Reset Payment Filter
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                startIcon={<PersonAddIcon />}
+                onClick={() => navigate('/students/admit')}
+                sx={{ bgcolor: '#2563eb', fontWeight: 700, px: 3, py: 1 }}
+              >
+                Admit First Student
+              </Button>
+            )}
           </Box>
         ) : (
           <>
@@ -382,13 +517,13 @@ export const Students: React.FC = () => {
                       Room & Bed
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>
-                      Joining Date
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>
                       Monthly Rent
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>
                       Next Due Date
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>
+                      Payment Status
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, color: '#475569' }}>
                       Status
@@ -399,10 +534,12 @@ export const Students: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {students
+                  {displayedStudents
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((student) => {
                       const initial = student.fullName ? student.fullName.charAt(0).toUpperCase() : 'S';
+                      const pending = isPending(student);
+
                       return (
                         <TableRow key={student.id} hover sx={{ '&:hover': { bgcolor: '#fcfdfd' } }}>
                           <TableCell>
@@ -413,9 +550,9 @@ export const Students: React.FC = () => {
                                   height: 38,
                                   fontSize: '0.9rem',
                                   fontWeight: 800,
-                                  bgcolor: '#eff6ff',
-                                  color: '#1d4ed8',
-                                  border: '1.5px solid #bfdbfe',
+                                  bgcolor: pending ? '#fef2f2' : '#eff6ff',
+                                  color: pending ? '#dc2626' : '#1d4ed8',
+                                  border: pending ? '1.5px solid #fecaca' : '1.5px solid #bfdbfe',
                                 }}
                               >
                                 {initial}
@@ -452,7 +589,7 @@ export const Students: React.FC = () => {
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
                               <Chip
-                                label={`Room ${student.roomNumber}`}
+                                label={`Room ${student.roomNumber || 'N/A'}`}
                                 size="small"
                                 sx={{
                                   bgcolor: '#f1f5f9',
@@ -462,7 +599,7 @@ export const Students: React.FC = () => {
                                 }}
                               />
                               <Chip
-                                label={`Bed ${student.bedNumber}`}
+                                label={`Bed ${student.bedNumber || student.bedId || 'N/A'}`}
                                 size="small"
                                 sx={{
                                   bgcolor: '#eff6ff',
@@ -475,10 +612,6 @@ export const Students: React.FC = () => {
                             </Box>
                           </TableCell>
 
-                          <TableCell sx={{ color: '#475569', fontSize: '0.85rem' }}>
-                            {student.joiningDate}
-                          </TableCell>
-
                           <TableCell sx={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
                             ₹{student.monthlyRent?.toLocaleString('en-IN')}
                           </TableCell>
@@ -486,7 +619,7 @@ export const Students: React.FC = () => {
                           <TableCell>
                             {student.nextPaymentDueDate ? (
                               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: student.isOverdue ? '#dc2626' : '#334155' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: pending ? '#dc2626' : '#334155' }}>
                                   {student.nextPaymentDueDate}
                                 </Typography>
                                 {student.isOverdue && (
@@ -512,6 +645,21 @@ export const Students: React.FC = () => {
                             )}
                           </TableCell>
 
+                          {/* Payment Status Column */}
+                          <TableCell>
+                            {pending ? (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
+                                <span className="badge badge-soft-danger d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill fw-bold">
+                                  <i className="bi bi-clock-history text-danger"></i> PENDING
+                                </span>
+                              </Box>
+                            ) : (
+                              <span className="badge badge-soft-success d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill fw-bold">
+                                <i className="bi bi-check-circle-fill text-success"></i> PAID
+                              </span>
+                            )}
+                          </TableCell>
+
                           <TableCell>
                             <StatusChip status={student.status} />
                           </TableCell>
@@ -534,11 +682,12 @@ export const Students: React.FC = () => {
                               >
                                 View
                               </Button>
+
                               {student.status !== 'VACATED' && (
                                 <Button
                                   size="small"
                                   variant="contained"
-                                  color="success"
+                                  color={pending ? 'error' : 'success'}
                                   startIcon={<PaymentIcon fontSize="small" />}
                                   onClick={() => navigate(`/payments?studentId=${student.studentId}&action=pay`)}
                                   sx={{
@@ -547,9 +696,10 @@ export const Students: React.FC = () => {
                                     py: 0.4,
                                   }}
                                 >
-                                  Pay
+                                  {pending ? 'Pay Fee' : 'Payment'}
                                 </Button>
                               )}
+
                               {isAdmin && (
                                 <Button
                                   size="small"
@@ -578,12 +728,12 @@ export const Students: React.FC = () => {
             </TableContainer>
 
             <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
+              rowsPerPageOptions={[5, 10, 25, 50]}
               component="div"
-              count={students.length}
+              count={displayedStudents.length}
               rowsPerPage={rowsPerPage}
               page={page}
-              onPageChange={(_e, newPage) => setPage(newPage)}
+              onPageChange={(_, newPage) => setPage(newPage)}
               onRowsPerPageChange={(e) => {
                 setRowsPerPage(parseInt(e.target.value, 10));
                 setPage(0);
@@ -596,24 +746,18 @@ export const Students: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialogOpen}
-        title={studentToDelete?.status === 'VACATED' ? 'Delete Vacated Student' : 'Delete Resident & Release Bed'}
-        message={
-          studentToDelete
-            ? studentToDelete.status === 'VACATED'
-              ? `Are you sure you want to permanently delete resident ${studentToDelete.fullName} (${studentToDelete.studentId})? This will remove their record from the database.`
-              : `Are you sure you want to delete resident ${studentToDelete.fullName} (${studentToDelete.studentId})? Since this resident is currently ${studentToDelete.status}, their allocated Bed ${studentToDelete.bedId || ''} will be automatically released back to AVAILABLE.`
-            : ''
-        }
-        confirmText="Delete Resident"
+        title="Delete Resident Permanently"
+        message={`Are you sure you want to permanently delete ${studentToDelete?.fullName} (${studentToDelete?.studentId})? This action cannot be undone.`}
+        confirmText="Yes, Delete Permanently"
+        cancelText="Cancel"
         confirmColor="error"
+        isLoading={isDeleting}
         onConfirm={handleDeleteStudent}
         onCancel={() => {
           setDeleteDialogOpen(false);
           setStudentToDelete(null);
         }}
-        isLoading={isDeleting}
       />
     </Box>
   );
 };
-

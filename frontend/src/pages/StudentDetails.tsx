@@ -279,6 +279,17 @@ export const StudentDetails: React.FC = () => {
                   {student.fullName}
                 </Typography>
                 <StatusChip status={student.status} size="medium" />
+                {student.status !== 'VACATED' && (
+                  (student.paymentStatus === 'PENDING' || student.isOverdue) ? (
+                    <span className="badge badge-soft-danger d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold">
+                      <i className="bi bi-clock-history text-danger"></i> FEE PENDING
+                    </span>
+                  ) : (
+                    <span className="badge badge-soft-success d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill fw-bold">
+                      <i className="bi bi-check-circle-fill text-success"></i> FEE PAID
+                    </span>
+                  )
+                )}
                 {student.isOverdue && (
                   <span
                     style={{
