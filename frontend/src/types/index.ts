@@ -358,6 +358,56 @@ export interface ReminderBatchResult {
   reminders: PaymentReminder[];
 }
 
+export type ExpenseCategory =
+  | 'FOOD_MESS'
+  | 'UTILITIES'
+  | 'MAINTENANCE'
+  | 'SALARIES'
+  | 'SUPPLIES'
+  | 'MISCELLANEOUS';
+
+export interface Expense {
+  id?: string;
+  title: string;
+  category: ExpenseCategory;
+  amount: number;
+  expenseDate: string;
+  paymentMethod: PaymentMethod;
+  vendor?: string;
+  billNumber?: string;
+  notes?: string;
+  recordedBy?: string;
+  createdAt?: string;
+}
+
+export interface ExpenseSummary {
+  totalExpensesMonth: number;
+  expensesToday: number;
+  totalExpensesYear: number;
+  expenseCountMonth: number;
+  expensesByCategory: Record<ExpenseCategory, number>;
+}
+
+export interface MonthlyProfitLoss {
+  month: string;
+  monthNumber: number;
+  year: number;
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMarginPercentage: number;
+  profitable: boolean;
+}
+
+export interface ProfitLossReport {
+  year: number;
+  totalAnnualRevenue: number;
+  totalAnnualExpenses: number;
+  netAnnualProfit: number;
+  annualProfitMarginPercentage: number;
+  monthlyBreakdown: MonthlyProfitLoss[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -365,4 +415,5 @@ export interface ApiResponse<T> {
   errors?: Record<string, string>;
   timestamp?: string;
 }
+
 

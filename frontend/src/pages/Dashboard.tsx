@@ -32,6 +32,7 @@ import NotificationImportantIcon from '@mui/icons-material/NotificationImportant
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { dashboardService } from '../services/dashboardService';
 import { DashboardStats, Payment } from '../types';
 import { StatusChip } from '../components/StatusChip';
@@ -93,7 +94,7 @@ export const Dashboard: React.FC = () => {
             Sri Venkateswara Boys Hostel Management & Operation Metrics
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
           <Button
             variant="contained"
             onClick={() => navigate('/students/new')}
@@ -107,6 +108,14 @@ export const Dashboard: React.FC = () => {
             sx={{ borderColor: '#cbd5e1', color: '#334155' }}
           >
             Record Payment
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<TrendingUpIcon />}
+            onClick={() => navigate('/expenses')}
+            sx={{ borderColor: '#cbd5e1', color: '#334155' }}
+          >
+            Daily Expenses & Profit
           </Button>
         </Box>
       </Box>
@@ -488,6 +497,78 @@ export const Dashboard: React.FC = () => {
             },
           }}
         />
+      </Card>
+
+      {/* Daily Expenses & Profit Summary Banner */}
+      <Card
+        className="pro-card"
+        sx={{
+          mb: 3.5,
+          p: 3,
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          color: '#ffffff',
+          borderRadius: 3,
+          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
+        }}
+      >
+        <Grid container spacing={2.5} alignItems="center">
+          <Grid item xs={12} md={7}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(16, 185, 129, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#10b981',
+                }}
+              >
+                <TrendingUpIcon sx={{ fontSize: 24 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                Daily Expenses & Net Profit Tracking
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: '#94a3b8', lineHeight: 1.6 }}>
+              Maintain daily operational expenses (Mess & Food, Electricity & Water, Repairs, Salaries) and monitor monthly profit & loss statements against resident fee collections in real time.
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/expenses')}
+              sx={{
+                bgcolor: '#10b981',
+                color: '#ffffff',
+                fontWeight: 700,
+                px: 2.5,
+                py: 1,
+                borderRadius: 2,
+                '&:hover': { bgcolor: '#059669' },
+              }}
+            >
+              Open Expense Ledger
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/expenses')}
+              sx={{
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                color: '#f8fafc',
+                fontWeight: 600,
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              }}
+            >
+              P&L Analysis
+            </Button>
+          </Grid>
+        </Grid>
       </Card>
 
       {/* Dual Table Section: Upcoming Dues & Recent Admissions */}

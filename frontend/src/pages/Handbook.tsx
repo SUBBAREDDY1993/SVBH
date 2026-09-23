@@ -28,6 +28,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import SecurityIcon from '@mui/icons-material/Security';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 export const Handbook: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,10 +63,11 @@ export const Handbook: React.FC = () => {
     { id: 'allocation', title: '5. Bed Transfers', icon: <SwapHorizIcon fontSize="small" /> },
     { id: 'payments', title: '6. Fee Collection & Receipts', icon: <PaymentIcon fontSize="small" /> },
     { id: 'reminders', title: '7. Dues & Automated Reminders', icon: <NotificationsActiveIcon fontSize="small" /> },
-    { id: 'vacate', title: '8. Notice Period & Vacating', icon: <ExitToAppIcon fontSize="small" /> },
-    { id: 'reports', title: '9. Reports & Analytics', icon: <AssessmentIcon fontSize="small" /> },
-    { id: 'settings', title: '10. System Administration', icon: <SettingsIcon fontSize="small" /> },
-    { id: 'checklist', title: '11. Daily Operations Checklist', icon: <ChecklistIcon fontSize="small" /> },
+    { id: 'expenses', title: '8. Expenses & Profit Tracking', icon: <TrendingUpIcon fontSize="small" /> },
+    { id: 'vacate', title: '9. Notice Period & Vacating', icon: <ExitToAppIcon fontSize="small" /> },
+    { id: 'reports', title: '10. Reports & Analytics', icon: <AssessmentIcon fontSize="small" /> },
+    { id: 'settings', title: '11. System Administration', icon: <SettingsIcon fontSize="small" /> },
+    { id: 'checklist', title: '12. Daily Operations Checklist', icon: <ChecklistIcon fontSize="small" /> },
   ];
 
   return (
@@ -433,11 +435,44 @@ export const Handbook: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Section 8: Vacating */}
+            {/* Section 8: Expenses & Profit */}
+            <Card id="expenses" sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
+              <CardContent sx={{ p: 3.5 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
+                  8. Daily Expense Management & Net Profit Tracking
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                  To maintain accurate hostel finances and operational profitability, record all daily expenses under <strong>Expenses & Profit</strong> (<code>/expenses</code>). The system automatically reconciles fee income against operating costs to compute net profits in real time.
+                </Typography>
+
+                <Paper sx={{ p: 2, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 2, mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534' }}>
+                    📈 Real-Time Profit Formula
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#15803d', mt: 0.5, fontWeight: 600 }}>
+                    Net Operating Profit = Total Resident Fee Collections - Total Operating Expenses<br />
+                    Profit Margin (%) = (Net Operating Profit / Total Collections) × 100
+                  </Typography>
+                </Paper>
+
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', mb: 0.5 }}>
+                  Key Expense Categories:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.7 }}>
+                  • <strong>Mess / Food Supplies:</strong> Groceries, rice, milk, vegetables, cooking gas, drinking water cans.<br />
+                  • <strong>Utilities:</strong> Electricity bills, water charges, generator diesel/fuel.<br />
+                  • <strong>Maintenance & Repairs:</strong> Plumbing, electrical, carpentry, AC servicing, RO water repairs.<br />
+                  • <strong>Staff Salaries:</strong> Head cook, assistant cooks, cleaning staff, night watchman.<br />
+                  • <strong>Internet & Cleaning:</strong> Wi-Fi fiber connection bills, disinfectants, detergents, trash bags.
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Section 9: Vacating */}
             <Card id="vacate" sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
-                  8. Notice Period & Vacating Procedures
+                  9. Notice Period & Vacating Procedures
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.7, mb: 1.5 }}>
                   Hostel policy requires a 15-day notice period before departure:
@@ -451,11 +486,11 @@ export const Handbook: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Section 9: Reports */}
+            {/* Section 10: Reports */}
             <Card id="reports" sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
-                  9. Reports, Analytics & Financial Reconciliation
+                  10. Reports, Analytics & Financial Reconciliation
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.7, mb: 1.5 }}>
                   Access comprehensive metrics under <strong>Reports</strong> (<code>/reports</code>):
@@ -469,11 +504,11 @@ export const Handbook: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Section 10: Settings */}
+            {/* Section 11: Settings */}
             <Card id="settings" sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
-                  10. System Administration & Institution Settings
+                  11. System Administration & Institution Settings
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.7, mb: 1.5 }}>
                   Administrators can customize institutional parameters from <strong>Settings</strong> (<code>/settings</code>):
@@ -486,11 +521,11 @@ export const Handbook: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Section 11: Daily Checklist */}
+            {/* Section 12: Daily Checklist */}
             <Card id="checklist" sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
-                  11. Daily Operations Checklist
+                  12. Daily Operations Checklist
                 </Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -513,8 +548,21 @@ export const Handbook: React.FC = () => {
                     <Typography variant="body2" sx={{ color: '#4c1d95', lineHeight: 1.7, mt: 0.5 }}>
                       ☑ Verify automated 6:00 PM evening reminder batch.<br />
                       ☑ Record all cash and UPI fee payments collected during the day.<br />
+                      ☑ Record daily operational expenses (mess, vegetables, repairs) in <code>/expenses</code>.<br />
                       ☑ Issue printed official receipts to paying students.<br />
                       ☑ Review departure notices scheduled for today.
+                    </Typography>
+                  </Paper>
+
+                  <Paper sx={{ p: 2, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534' }}>
+                      📅 Monthly Closing Routine (28th - 31st of Month)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#15803d', lineHeight: 1.7, mt: 0.5 }}>
+                      ☑ Review the Profit & Loss Statement in <code>/expenses</code> to audit Net Operating Profit.<br />
+                      ☑ Verify category expenditure breakdown vs monthly budget allocation.<br />
+                      ☑ Reconcile bank deposits against recorded fee receipts.<br />
+                      ☑ Follow up with any delinquent resident accounts.
                     </Typography>
                   </Paper>
                 </Box>

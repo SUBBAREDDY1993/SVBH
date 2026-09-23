@@ -17,11 +17,12 @@
 5. [Bed Allocation & Room Transfers](#5-bed-allocation--room-transfers)
 6. [Fee Collection & Receipt Generation](#6-fee-collection--receipt-generation)
 7. [Payment Due Tracking & Automated Reminders](#7-payment-due-tracking--automated-reminders)
-8. [Notice Period & Vacating Procedures](#8-notice-period--vacating-procedures)
-9. [Operational Alerts & Notifications](#9-operational-alerts--notifications)
-10. [Reports, Analytics & Financial Reconciliation](#10-reports-analytics--financial-reconciliation)
-11. [System Settings & Data Management](#11-system-settings--data-management)
-12. [Daily & Monthly Operational Checklists](#12-daily--monthly-operational-checklists)
+8. [Daily Expense Management & Net Profit Tracking](#8-daily-expense-management--net-profit-tracking)
+9. [Notice Period & Vacating Procedures](#9-notice-period--vacating-procedures)
+10. [Operational Alerts & Notifications](#10-operational-alerts--notifications)
+11. [Reports, Analytics & Financial Reconciliation](#11-reports-analytics--financial-reconciliation)
+12. [System Settings & Data Management](#12-system-settings--data-management)
+13. [Daily & Monthly Operational Checklists](#13-daily--monthly-operational-checklists)
 
 ---
 
@@ -262,9 +263,51 @@ Clicking the **Remind** button opens the full dialog with:
 
 ---
 
-## 8. Notice Period & Vacating Procedures
+## 8. Daily Expense Management & Net Profit Tracking
 
-### 8.1 Putting a Student on Notice Period
+Hostel financial sustainability requires rigorous tracking of operational expenditures alongside resident fee collections. The **Expenses & Profit** module (`/expenses`) automates daily ledger logging, category-wise expenditure analytics, and real-time Profit & Loss (P&L) statements.
+
+### 8.1 Key Financial Formula
+$$\text{Net Operating Profit} = \text{Total Resident Collections} - \text{Total Operational Expenses}$$
+$$\text{Profit Margin (\%)} = \left(\frac{\text{Net Profit}}{\text{Total Collections}}\right) \times 100$$
+
+### 8.2 Standard Operational Expense Categories
+| Category | Scope & Eligible Items | Typical Payment Cycle |
+| :--- | :--- | :--- |
+| **FOOD_MESS** | Provisions, rice, lentils, fresh vegetables, cooking oil, spices, daily milk supply, commercial LPG cylinders, drinking water cans. | Daily & Weekly |
+| **UTILITIES** | Monthly electricity bills (TGSPDCL), municipal water board charges, generator fuel/diesel. | Monthly |
+| **MAINTENANCE** | Plumbing repairs, electrical maintenance, RO plant servicing, carpentry, painting, drain cleaning. | On-demand / Weekly |
+| **SALARIES** | Head cook, kitchen assistants, room & floor sweepers, night security watchman, administrative staff. | Monthly (1st - 5th) |
+| **INTERNET_CABLE** | Commercial high-speed Wi-Fi fiber connection and cable television subscriptions. | Monthly |
+| **CLEANING_SUPPLIES** | Bleaching powder, phenyl, floor disinfectants, broomsticks, mops, trash bags, pest control treatment. | Bi-weekly |
+| **MISCELLANEOUS** | Printing, stationery, hostel license renewals, first-aid/medical supplies, emergency transport. | Ad-hoc |
+
+### 8.3 Recording a Daily Expense
+1. Navigate to **Expenses & Profit** (`/expenses`) from the sidebar.
+2. Click the **+ Record Expense** button.
+3. Complete the ledger entry form:
+   - **Expense Category:** Select from the standard categories above.
+   - **Amount (₹):** Enter exact expense incurred.
+   - **Expense Date:** Date of payment (defaults to current date).
+   - **Payment Method:** `Cash`, `UPI`, `Bank Transfer`, `Card`, or `Cheque`.
+   - **Paid To / Vendor:** Name of merchant or employee (e.g. *Sri Balaji Vegetables*, *Cook Somanna*).
+   - **Description / Itemized Particulars:** Detailed notes (e.g. "Rice 50kg bag, 15L sunflower oil, onion/potato sack").
+   - **Invoice / Receipt Number:** Cash memo number or bill reference for audit compliance.
+4. Click **Save Expense Entry**. The ledger, monthly totals, and net profit calculations update instantaneously.
+
+### 8.4 Profit & Loss (P&L) Analysis
+Switch to the **Profit & Loss Statement** tab on the Expenses page:
+- **Total Revenue (Income):** Sum of all paid room rents, admission fees, and utility adjustments collected in that month.
+- **Total Operating Expenses:** Sum of all recorded operational expenses.
+- **Net Profit:** Clear indicator of surplus (green) or deficit (red).
+- **Profit Margin Percentage:** Gauge of hostel operational efficiency.
+- **Expense Breakdown Bars:** Visual insight into which departments consume the largest share of hostel capital.
+
+---
+
+## 9. Notice Period & Vacating Procedures
+
+### 9.1 Putting a Student on Notice Period
 When a student informs the warden that they plan to vacate:
 1. Navigate to the student's profile: `/students/:id`.
 2. Click the yellow **Notice Period** button.
@@ -276,7 +319,7 @@ When a student informs the warden that they plan to vacate:
 4. Click **Confirm Notice Period**.
 5. The student's status changes to `NOTICE_PERIOD`. They appear under the **Leaving Soon** alerts on the Dashboard and Notifications page.
 
-### 8.2 Vacating a Resident (Final Settlement)
+### 9.2 Vacating a Resident (Final Settlement)
 On the resident's departure date:
 1. Open the student's profile (`/students/:id`).
 2. Click the red **Vacate Student** button (Admin only).
@@ -294,7 +337,7 @@ On the resident's departure date:
 
 ---
 
-## 9. Operational Alerts & Notifications
+## 10. Operational Alerts & Notifications
 
 Navigate to **Notifications** (`/notifications`) from the sidebar to review live system alerts:
 - 🔴 **Overdue Payment Alerts:** Count of delinquent residents and total pending revenue requiring immediate collection.
@@ -304,45 +347,45 @@ Navigate to **Notifications** (`/notifications`) from the sidebar to review live
 
 ---
 
-## 10. Reports, Analytics & Financial Reconciliation
+## 11. Reports, Analytics & Financial Reconciliation
 
 Navigate to **Reports** (`/reports`) to access analytical tools:
 
-### 10.1 Revenue Analytics
+### 11.1 Revenue Analytics
 - **Total Annual Revenue:** Aggregated income across the calendar year.
 - **Monthly Revenue Breakdown:** Month-by-month bar chart comparing fee collections.
 
-### 10.2 Collection Breakdown by Payment Method
+### 11.2 Collection Breakdown by Payment Method
 - Pie chart and summary metrics showing distribution across **UPI**, **Cash**, **Bank Transfer**, and **Card**.
 
-### 10.3 Bed Occupancy Metrics
+### 11.3 Bed Occupancy Metrics
 - Live occupancy rate percentage: `(Occupied Beds / Total Beds) * 100`.
 - Floor-by-floor occupancy heat map.
 - Distribution by room type (AC vs Non-AC vs Attached Bathroom).
 
-### 10.4 Exporting Reports
+### 11.4 Exporting Reports
 - Click **Export Report / Print** to generate clean, printable audit reports for hostel accounting and tax filings.
 
 ---
 
-## 11. System Settings & Data Management
+## 12. System Settings & Data Management
 
 Administrators can navigate to **Settings** (`/settings`):
 
-### 11.1 General Institution Profile
+### 12.1 General Institution Profile
 - **Hostel Name:** Sri Venkateswara Boys Hostel
 - **Address:** Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038
 - **Contact Number:** +91 9441843574
 - **Official Email:** svbhostel2026@gmail.com
 - **Payment Grace Period:** Default 5 days before overdue flags trigger.
 
-### 11.2 Database Tools
+### 12.2 Database Tools
 - **Reset to Full 70-Bed Layout:** Re-initializes all 16 rooms and 70 beds across 6 floors without deleting admitted students.
 - **Clear Demonstration Data:** Empties mock records when transitioning to real-world production data.
 
 ---
 
-## 12. Daily & Monthly Operational Checklists
+## 13. Daily & Monthly Operational Checklists
 
 ### 🌅 Daily Morning Routine (09:00 AM - 10:00 AM)
 1. **Log in** to the system with your credentials.
@@ -359,13 +402,17 @@ Administrators can navigate to **Settings** (`/settings`):
 2. Record all cash and UPI fee payments collected at the reception during the day:
    - Verify transaction reference numbers.
    - Issue printed receipts to residents.
-3. Check the **Notice Period** tab for residents scheduled to vacate today; conduct room inspection and complete final settlement.
+3. Record daily operational expenses in **Expenses & Profit** (`/expenses`) - including mess provisions, daily vegetable purchases, maintenance disbursements, or staff advances.
+4. Check the **Notice Period** tab for residents scheduled to vacate today; conduct room inspection and complete final settlement.
 
 ### 📅 Monthly Closing Routine (28th - 31st of each month)
 1. Open **Reports** (`/reports`) and review **Total Collection This Month**.
-2. Reconcile recorded UPI/Cash receipts against bank account statements.
-3. Follow up with all residents in the **Overdue Rents** category.
-4. Export monthly collection report and backup database archives.
+2. Review the **Profit & Loss Statement** in `/expenses` to verify monthly net profit margin:
+   $$\text{Net Profit} = \text{Total Resident Collections} - \text{Total Operating Expenses}$$
+3. Audit category expenditures (Mess vs Electricity vs Maintenance vs Salaries) against monthly budget targets.
+4. Reconcile recorded UPI/Cash receipts against bank account statements.
+5. Follow up with all residents in the **Overdue Rents** category.
+6. Export monthly collection and profit report and backup database archives.
 
 ---
 

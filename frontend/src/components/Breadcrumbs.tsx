@@ -12,6 +12,7 @@ const routeNameMap: Record<string, string> = {
   allocations: 'Allocations & Transfers',
   payments: 'Payments & Revenue',
   due: 'Due Tracker',
+  expenses: 'Expenses & Profit',
   receipt: 'Receipt',
   reports: 'Reports & Analytics',
   notifications: 'Notifications',

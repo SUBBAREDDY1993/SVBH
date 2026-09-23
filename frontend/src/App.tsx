@@ -24,6 +24,7 @@ import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { Notifications } from './pages/Notifications';
 import { Handbook } from './pages/Handbook';
+import { Expenses } from './pages/Expenses';
 
 const App: React.FC = () => {
   return (
@@ -51,6 +52,7 @@ const App: React.FC = () => {
                     <Route path="/payments" element={<Payments />} />
                     <Route path="/payments/due" element={<PaymentDue />} />
                     <Route path="/payments/receipt/:receiptNumber" element={<PaymentReceipt />} />
+                    <Route path="/expenses" element={<Expenses />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/settings" element={<Settings />} />

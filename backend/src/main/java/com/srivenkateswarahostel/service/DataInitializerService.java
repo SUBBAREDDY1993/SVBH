@@ -28,6 +28,7 @@ public class DataInitializerService implements CommandLineRunner {
     private final HostelSettingRepository hostelSettingRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoomService roomService;
+    private final ExpenseRepository expenseRepository;
 
     @Value("${app.admin.username:admin}")
     private String adminUsername;
@@ -52,6 +53,7 @@ public class DataInitializerService implements CommandLineRunner {
         } else {
             log.info("Database initialized with {} beds across {} rooms.", bedRepository.count(), roomRepository.count());
         }
+        initSampleExpenses();
     }
 
     public void initAdminUser() {
@@ -484,5 +486,52 @@ public class DataInitializerService implements CommandLineRunner {
                 .updatedAt(date.atTime(10, 30))
                 .build();
         paymentRepository.save(payment);
+    }
+
+    private void initSampleExpenses() {
+        if (expenseRepository.count() == 0) {
+            LocalDate today = LocalDate.now();
+
+            createExpense("Daily Vegetables & Provisions", ExpenseCategory.FOOD_MESS, 2850.0,
+                    today, PaymentMethod.UPI, "Venkatesh Kirana Store", "BILL-2026-89", "Fresh vegetables and lentils for hostel mess");
+            createExpense("Fresh Milk & Dairy Supplies (25 Liters)", ExpenseCategory.FOOD_MESS, 950.0,
+                    today, PaymentMethod.CASH, "Vijaya Dairy SR Nagar", "BILL-104", "Morning and evening tea & curd");
+            createExpense("Commercial Gas Cylinder Refill (2 units)", ExpenseCategory.FOOD_MESS, 3600.0,
+                    today.minusDays(2), PaymentMethod.UPI, "HP Gas Agency", "INV-55421", "Mess kitchen cooking gas");
+            createExpense("Monthly Electricity Bill (Floors 1-6)", ExpenseCategory.UTILITIES, 7850.0,
+                    today.minusDays(5), PaymentMethod.UPI, "TSSPDCL Hyderabad", "TSSPDCL-98741", "September electricity bill for all rooms & motor");
+            createExpense("Water Tanker Supply (2000L)", ExpenseCategory.UTILITIES, 1200.0,
+                    today.minusDays(3), PaymentMethod.CASH, "Balaji Water Suppliers", "REC-884", "Overhead tank refilling");
+            createExpense("High-Speed Fiber Internet (300 Mbps)", ExpenseCategory.UTILITIES, 1499.0,
+                    today.minusDays(7), PaymentMethod.UPI, "ACT Fibernet", "ACT-INV-4412", "Hostel resident high-speed WiFi");
+            createExpense("2nd Floor Bathroom Plumbing & Tap Repairs", ExpenseCategory.MAINTENANCE, 850.0,
+                    today.minusDays(4), PaymentMethod.CASH, "Local Plumber", "CASH-PLUMB", "Replaced leaking taps in Room 202 & 203");
+            createExpense("Cleaning Supplies, Phenyl & Detergents", ExpenseCategory.SUPPLIES, 750.0,
+                    today.minusDays(1), PaymentMethod.UPI, "D-Mart Ameerpet", "DMART-7782", "Floor cleaning chemicals & soaps");
+            createExpense("Mess Head Cook Salary (Monthly)", ExpenseCategory.SALARIES, 15000.0,
+                    today.minusDays(10), PaymentMethod.BANK_TRANSFER, "Ramu (Head Cook)", "SAL-COOK-09", "September cooking staff salary");
+            createExpense("Housekeeping Staff Wages (Monthly)", ExpenseCategory.SALARIES, 9000.0,
+                    today.minusDays(10), PaymentMethod.CASH, "Laxmi (Housekeeping)", "SAL-HK-09", "Hostel daily cleaning wages");
+
+            log.info("Initialized sample daily expenses across Food, Utilities, Maintenance, and Salaries.");
+        }
+    }
+
+    private void createExpense(String title, ExpenseCategory category, Double amount, LocalDate date,
+                              PaymentMethod method, String vendor, String billNo, String notes) {
+        Expense expense = Expense.builder()
+                .title(title)
+                .category(category)
+                .amount(amount)
+                .expenseDate(date)
+                .paymentMethod(method)
+                .vendor(vendor)
+                .billNumber(billNo)
+                .notes(notes)
+                .recordedBy("ADMIN")
+                .createdAt(date.atTime(11, 0))
+                .updatedAt(date.atTime(11, 0))
+                .build();
+        expenseRepository.save(expense);
     }
 }

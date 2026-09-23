@@ -17,6 +17,7 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -37,6 +38,7 @@ const navItems = [
   { text: 'Allocations', path: '/allocations', icon: <SwapHorizIcon /> },
   { text: 'Payments', path: '/payments', icon: <PaymentIcon /> },
   { text: 'Payment Due', path: '/payments/due', icon: <ScheduleIcon /> },
+  { text: 'Expenses & Profit', path: '/expenses', icon: <TrendingUpIcon /> },
   { text: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
   { text: 'Notifications', path: '/notifications', icon: <NotificationsIcon /> },
   { text: 'Handbook', path: '/handbook', icon: <MenuBookIcon /> },
