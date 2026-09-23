@@ -18,11 +18,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = authService.getStoredUser();
-    if (storedUser && authService.isAuthenticated()) {
-      setUser(storedUser);
-    }
-    setIsLoading(false);
+    const initAuth = async () => {
+      const storedUser = authService.getStoredUser();
+      const token = localStorage.getItem('svbh_token');
+      if (storedUser && token) {
+        try {
+          const freshUser = await authService.getCurrentUser();
+          setUser(freshUser);
+        } catch (err) {
+          console.warn('Session expired or invalid, redirecting to login:', err);
+          localStorage.removeItem('svbh_token');
+          localStorage.removeItem('svbh_user');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = (token: string, userData: Partial<User>) => {

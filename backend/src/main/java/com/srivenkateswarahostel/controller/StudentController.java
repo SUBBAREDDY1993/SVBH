@@ -82,7 +82,7 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.successMessage("Student deleted successfully"));
     }
 
-    @PatchMapping("/{id}/payment-status")
+    @RequestMapping(value = "/{id}/payment-status", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @Operation(summary = "Update resident fee payment status (PAID, PENDING, HALF_PAID)")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updatePaymentStatus(
             @PathVariable String id,
