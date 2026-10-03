@@ -1,5 +1,6 @@
 package com.srivenkateswarahostel.dto;
 
+import com.srivenkateswarahostel.model.AllocationType;
 import com.srivenkateswarahostel.model.EmergencyContact;
 import com.srivenkateswarahostel.model.StudentDocument;
 import jakarta.validation.constraints.Min;
@@ -58,6 +59,9 @@ public class StudentAdmissionRequest {
 
     @Builder.Default
     private int paymentDueDay = 5;
+
+    @Builder.Default
+    private AllocationType allocationType = AllocationType.INITIAL;
 
     private EmergencyContact emergencyContact;
     private List<StudentDocument> documents;

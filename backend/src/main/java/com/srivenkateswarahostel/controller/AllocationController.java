@@ -3,7 +3,9 @@ package com.srivenkateswarahostel.controller;
 import com.srivenkateswarahostel.dto.ApiResponse;
 import com.srivenkateswarahostel.dto.BedTransferRequest;
 import com.srivenkateswarahostel.dto.StudentResponseDto;
+import com.srivenkateswarahostel.exception.BadRequestException;
 import com.srivenkateswarahostel.model.AllocationHistory;
+import com.srivenkateswarahostel.model.AllocationType;
 import com.srivenkateswarahostel.service.AllocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/allocations")
@@ -37,5 +40,26 @@ public class AllocationController {
             @RequestParam(required = false) String studentId) {
         List<AllocationHistory> history = allocationService.getAllocationHistory(studentId);
         return ResponseEntity.ok(ApiResponse.success(history));
+    }
+
+    @PatchMapping("/{id}/type")
+    @Operation(summary = "Update allocation type (INITIAL, EXISTING, REJOIN, TRANSFER, VACATE)")
+    public ResponseEntity<ApiResponse<AllocationHistory>> updateAllocationType(
+            @PathVariable String id,
+            @RequestParam(required = false) AllocationType type,
+            @RequestBody(required = false) Map<String, String> body) {
+        AllocationType newType = type;
+        if (newType == null && body != null && body.containsKey("type")) {
+            try {
+                newType = AllocationType.valueOf(body.get("type").trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid allocation type: " + body.get("type"));
+            }
+        }
+        if (newType == null) {
+            throw new BadRequestException("Allocation type is required");
+        }
+        AllocationHistory updated = allocationService.updateAllocationType(id, newType);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Allocation type updated to " + newType));
     }
 }

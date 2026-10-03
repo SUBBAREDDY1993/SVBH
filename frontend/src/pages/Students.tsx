@@ -34,13 +34,16 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ClearIcon from '@mui/icons-material/Clear';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import EditIcon from '@mui/icons-material/Edit';
 import { studentService } from '../services/studentService';
 import { reportService } from '../services/reportService';
 import { reminderService } from '../services/reminderService';
-import { Student, StudentStatus, PaymentDue as PaymentDueType } from '../types';
+import { Student, StudentStatus, PaymentDue as PaymentDueType, PaymentReminder } from '../types';
 import { StatusChip } from '../components/StatusChip';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { PaymentReminderModal } from '../components/PaymentReminderModal';
+import { EditStudentModal } from '../components/EditStudentModal';
+import { WhatsAppBatchModal } from '../components/WhatsAppBatchModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -58,6 +61,14 @@ export const Students: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [updatingStudentId, setUpdatingStudentId] = useState<string | null>(null);
+
+  // Edit Student Modal state
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState<Student | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
+  // WhatsApp Batch Dispatcher State
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchModalReminders, setBatchModalReminders] = useState<PaymentReminder[]>([]);
 
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
@@ -183,9 +194,13 @@ export const Students: React.FC = () => {
     try {
       setIsBatchRunning(true);
       const res = await reminderService.triggerBatch('MORNING', true);
-      showSuccess(res.message || 'Payment reminders sent successfully to all pending and half-paid residents!');
+      if (res.reminders && res.reminders.length > 0) {
+        setBatchModalReminders(res.reminders);
+        setBatchModalOpen(true);
+      }
+      showSuccess(res.message || 'Prepared WhatsApp reminders for all due residents!');
     } catch (err: any) {
-      showError(err.response?.data?.message || 'Failed to send batch payment reminders');
+      showError(err.response?.data?.message || 'Failed to prepare batch payment reminders');
     } finally {
       setIsBatchRunning(false);
     }
@@ -939,6 +954,26 @@ export const Students: React.FC = () => {
                                 View
                               </Button>
 
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<EditIcon fontSize="small" />}
+                                onClick={() => {
+                                  setSelectedStudentForEdit(student);
+                                  setEditModalOpen(true);
+                                }}
+                                sx={{
+                                  borderColor: '#bfdbfe',
+                                  color: '#1d4ed8',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  py: 0.4,
+                                  '&:hover': { bgcolor: '#eff6ff', borderColor: '#93c5fd' },
+                                }}
+                              >
+                                Edit
+                              </Button>
+
                               {student.status !== 'VACATED' && (
                                 <Button
                                   size="small"
@@ -1080,6 +1115,33 @@ export const Students: React.FC = () => {
           setSelectedDueItem(null);
         }}
         dueItem={selectedDueItem}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedStudentForEdit(null);
+        }}
+        student={selectedStudentForEdit}
+        onSuccess={(updated) => {
+          setStudents((prev) =>
+            prev.map((s) => (s.studentId === updated.studentId || (s.id && s.id === updated.id) ? { ...s, ...updated } : s))
+          );
+          setAllStudents((prev) =>
+            prev.map((s) => (s.studentId === updated.studentId || (s.id && s.id === updated.id) ? { ...s, ...updated } : s))
+          );
+        }}
+      />
+
+      {/* WhatsApp Batch Dispatcher Modal */}
+      <WhatsAppBatchModal
+        open={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        slot="ALL DUE"
+        reminders={batchModalReminders}
+        onRefresh={handleTriggerRemindersBatch}
       />
     </Box>
   );

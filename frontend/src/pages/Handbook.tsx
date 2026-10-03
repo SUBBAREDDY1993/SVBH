@@ -407,7 +407,7 @@ export const Handbook: React.FC = () => {
                   7. Payment Due Tracking & Automated Reminders
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.7, mb: 2 }}>
-                  The hostel operates an automated fee reminder system running twice daily:
+                  The hostel operates an automated fee reminder system running thrice daily:
                 </Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
@@ -418,6 +418,7 @@ export const Handbook: React.FC = () => {
                     <Typography variant="body2" sx={{ color: '#15803d', mt: 0.5 }}>
                       • <strong>Morning Batch:</strong> 9:00 AM (Daily)<br />
                       • <strong>Evening Batch:</strong> 6:00 PM (Daily)<br />
+                      • <strong>Night Batch:</strong> 9:00 PM (Daily)<br />
                       • Targets residents whose rent is due within 3 days, due today, or overdue.<br />
                       • Prevents duplicate reminder spamming for the same slot on the same day.
                     </Typography>

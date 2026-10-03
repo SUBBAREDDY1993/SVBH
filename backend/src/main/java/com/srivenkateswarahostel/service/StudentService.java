@@ -103,15 +103,22 @@ public class StudentService {
 
         // 7. Record Allocation History
         String allocatedBy = getCurrentUsername();
+        AllocationType allocType = request.getAllocationType() != null ? request.getAllocationType() : AllocationType.INITIAL;
+        String remarks = allocType == AllocationType.EXISTING
+                ? "Existing resident record allocation"
+                : allocType == AllocationType.REJOIN
+                ? "Rejoining resident allocation"
+                : "Initial admission allocation";
+
         AllocationHistory allocationHistory = AllocationHistory.builder()
                 .studentId(savedStudent.getStudentId())
                 .studentName(savedStudent.getFullName())
                 .toRoom(bed.getRoomNumber())
                 .toBedId(bed.getBedId())
                 .allocationDate(LocalDateTime.now())
-                .type(AllocationType.INITIAL)
+                .type(allocType)
                 .allocatedBy(allocatedBy)
-                .remarks("Initial admission allocation")
+                .remarks(remarks)
                 .createdAt(LocalDateTime.now())
                 .build();
         allocationHistoryRepository.save(allocationHistory);
@@ -142,6 +149,12 @@ public class StudentService {
         student.setState(request.getState());
         student.setPincode(request.getPincode());
 
+        if (request.getJoiningDate() != null) {
+            student.setJoiningDate(request.getJoiningDate());
+        }
+        if (request.getNextPaymentDueDate() != null) {
+            student.setNextPaymentDueDate(request.getNextPaymentDueDate());
+        }
         if (request.getMonthlyRent() != null && request.getMonthlyRent() > 0) {
             student.setMonthlyRent(request.getMonthlyRent());
         }

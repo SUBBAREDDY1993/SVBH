@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Avatar,
+  Badge,
   Box,
   Button,
+  Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
   Menu,
   MenuItem,
+  Popover,
   TextField,
   Toolbar,
   Typography,
@@ -22,11 +31,19 @@ import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PaymentIcon from '@mui/icons-material/Payment';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import KeyIcon from '@mui/icons-material/Key';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { authService } from '../services/authService';
+import { reminderService } from '../services/reminderService';
+import { FeeReminder } from '../types';
 
 interface NavbarProps {
   onDrawerToggle: () => void;
@@ -49,6 +66,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Live Fee Reminders State (Requirement 5 & 8)
+  const [reminders, setReminders] = useState<FeeReminder[]>([]);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  const [isLoadingReminders, setIsLoadingReminders] = useState(false);
+
+  const loadReminders = async () => {
+    try {
+      setIsLoadingReminders(true);
+      const data = await reminderService.getActiveReminders();
+      setReminders(data);
+    } catch (err) {
+      console.error('Failed to load reminders for navbar bell:', err);
+    } finally {
+      setIsLoadingReminders(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReminders();
+    const handleRefresh = () => loadReminders();
+    window.addEventListener('svbh-refresh-data', handleRefresh);
+    return () => window.removeEventListener('svbh-refresh-data', handleRefresh);
+  }, []);
 
   const isMac = typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
@@ -214,9 +255,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               Record Payment
             </Button>
 
-            <Tooltip title="Notifications">
-              <IconButton onClick={() => navigate('/notifications')} sx={{ color: '#64748b' }}>
-                <NotificationsNoneIcon />
+            <Tooltip title={reminders.length > 0 ? `${reminders.length} Fee Reminder(s) Pending` : 'Fee Reminders & Notifications'}>
+              <IconButton
+                onClick={(e) => setNotificationAnchorEl(e.currentTarget)}
+                sx={{
+                  color: reminders.length > 0 ? '#d97706' : '#64748b',
+                  bgcolor: reminders.length > 0 ? 'rgba(245, 158, 11, 0.1)' : 'transparent',
+                  '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.2)' },
+                  transition: 'all 0.2s ease',
+                }}
+                aria-label="Fee reminders"
+              >
+                <Badge badgeContent={reminders.length} color="error" max={99}>
+                  {reminders.length > 0 ? (
+                    <NotificationsActiveIcon sx={{ color: '#ea580c' }} />
+                  ) : (
+                    <NotificationsNoneIcon />
+                  )}
+                </Badge>
               </IconButton>
             </Tooltip>
 
@@ -284,6 +340,199 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Logout
               </MenuItem>
             </Menu>
+
+            {/* Fee Reminders Dropdown / Popover (Requirement 5) */}
+            <Popover
+              open={Boolean(notificationAnchorEl)}
+              anchorEl={notificationAnchorEl}
+              onClose={() => setNotificationAnchorEl(null)}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              PaperProps={{
+                sx: {
+                  width: { xs: 320, sm: 380 },
+                  maxHeight: 520,
+                  borderRadius: 3,
+                  boxShadow: '0 14px 35px rgba(0,0,0,0.15)',
+                  border: '1px solid #e2e8f0',
+                  overflow: 'hidden',
+                },
+              }}
+            >
+              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                    Notifications
+                  </Typography>
+                  <Chip
+                    label={`${reminders.length} Due`}
+                    size="small"
+                    color={reminders.length > 0 ? 'error' : 'default'}
+                    sx={{ fontWeight: 700, height: 22, fontSize: '0.75rem' }}
+                  />
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={loadReminders}
+                  disabled={isLoadingReminders}
+                  title="Refresh reminders"
+                >
+                  <RefreshIcon
+                    fontSize="small"
+                    sx={{
+                      animation: isLoadingReminders ? 'spin 1s linear infinite' : 'none',
+                      '@keyframes spin': {
+                        '0%': { transform: 'rotate(0deg)' },
+                        '100%': { transform: 'rotate(360deg)' },
+                      },
+                    }}
+                  />
+                </IconButton>
+              </Box>
+
+              <Box sx={{ maxHeight: 370, overflowY: 'auto' }}>
+                {isLoadingReminders && reminders.length === 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 5, gap: 1.5 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      Loading reminders...
+                    </Typography>
+                  </Box>
+                ) : reminders.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h6" sx={{ fontSize: '1.75rem', mb: 1 }}>
+                      🎉
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                      No pending fee reminders 🎉
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5 }}>
+                      All resident fees are up to date!
+                    </Typography>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {reminders.map((rem) => {
+                      const isOverdue = rem.status === 'OVERDUE';
+                      const isToday = rem.status === 'DUE_TODAY';
+                      const isTomorrow = rem.daysRemaining === 1;
+
+                      return (
+                        <ListItem
+                          key={rem.studentId}
+                          sx={{
+                            py: 1.5,
+                            px: 2,
+                            borderBottom: '1px solid #f1f5f9',
+                            transition: 'background-color 0.15s',
+                            bgcolor: isOverdue ? 'rgba(239, 68, 68, 0.04)' : isToday ? 'rgba(245, 158, 11, 0.04)' : 'transparent',
+                            '&:hover': { bgcolor: 'rgba(241, 245, 249, 0.8)' },
+                          }}
+                          secondaryAction={
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              {rem.whatsappUrl && (
+                                <Tooltip title="Send WhatsApp reminder">
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(rem.whatsappUrl, '_blank');
+                                    }}
+                                  >
+                                    <WhatsAppIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
+                          }
+                        >
+                          <ListItemAvatar sx={{ minWidth: 40 }}>
+                            <Avatar
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                bgcolor: isOverdue ? '#fee2e2' : isToday ? '#fef3c7' : '#e0e7ff',
+                                color: isOverdue ? '#b91c1c' : isToday ? '#b45309' : '#3730a3',
+                              }}
+                            >
+                              {rem.studentName?.charAt(0) || 'S'}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{ fontWeight: 700, color: '#0f172a', cursor: 'pointer' }}
+                                  onClick={() => {
+                                    setNotificationAnchorEl(null);
+                                    navigate(`/students/${rem.studentId}`);
+                                  }}
+                                >
+                                  • {rem.studentName}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: isOverdue ? '#dc2626' : isToday ? '#d97706' : '#2563eb',
+                                  }}
+                                >
+                                  - {rem.message || (isOverdue ? 'Fee overdue' : isToday ? 'Fee due today' : isTomorrow ? 'Fee due tomorrow' : `Fee due in ${rem.daysRemaining} days`)}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                  Room {rem.roomNumber} {rem.bedNumber ? `| Bed ${rem.bedNumber}` : ''} • <strong style={{ color: '#0f172a' }}>₹{rem.feeAmount?.toLocaleString('en-IN')}</strong> • Due {rem.dueDateFormatted || rem.dueDate}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </Box>
+
+              <Divider />
+              <Box sx={{ p: 1.5, bgcolor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Button
+                  size="small"
+                  color="primary"
+                  sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
+                  onClick={() => {
+                    setNotificationAnchorEl(null);
+                    navigate('/payments/due');
+                  }}
+                >
+                  View All Dues ({reminders.length})
+                </Button>
+                <Button
+                  size="small"
+                  color="inherit"
+                  endIcon={<ArrowForwardIcon fontSize="small" />}
+                  sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', color: '#64748b' }}
+                  onClick={() => {
+                    setNotificationAnchorEl(null);
+                    navigate('/notifications');
+                  }}
+                >
+                  All Alerts
+                </Button>
+              </Box>
+            </Popover>
           </Box>
         </Toolbar>
       </AppBar>

@@ -16,7 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { studentService } from '../services/studentService';
 import { roomService } from '../services/roomService';
-import { Bed, Room, StudentAdmissionRequest } from '../types';
+import { Bed, Room, StudentAdmissionRequest, AllocationType } from '../types';
 import { useNotification } from '../context/NotificationContext';
 
 export const StudentForm: React.FC = () => {
@@ -48,6 +48,7 @@ export const StudentForm: React.FC = () => {
   const [pincode, setPincode] = useState('517502');
 
   // Hostel Allocation
+  const [allocationType, setAllocationType] = useState<AllocationType>('INITIAL');
   const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedRoom, setSelectedRoom] = useState(prefillRoom);
   const [selectedBed, setSelectedBed] = useState(prefillBed);
@@ -145,6 +146,7 @@ export const StudentForm: React.FC = () => {
       monthlyRent,
       securityDeposit,
       paymentDueDay,
+      allocationType,
       emergencyContact: emergencyName.trim()
         ? {
             name: emergencyName.trim(),
@@ -434,6 +436,22 @@ export const StudentForm: React.FC = () => {
                   helperText="e.g. 5 = due on 5th of every month"
                   inputProps={{ min: 1, max: 28 }}
                 />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  label="Admission / Allocation Type *"
+                  fullWidth
+                  size="small"
+                  value={allocationType}
+                  onChange={(e) => setAllocationType(e.target.value as AllocationType)}
+                  helperText="Select whether this is initial admission, existing resident, or rejoin"
+                >
+                  <MenuItem value="INITIAL">INITIAL (New Admission)</MenuItem>
+                  <MenuItem value="EXISTING">EXISTING (Existing Resident)</MenuItem>
+                  <MenuItem value="REJOIN">REJOIN (Rejoining Resident)</MenuItem>
+                </TextField>
               </Grid>
             </Grid>
 

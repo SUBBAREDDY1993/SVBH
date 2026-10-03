@@ -119,73 +119,102 @@ public class PaymentService {
     public List<PaymentDueDto> getOverduePayments() {
         LocalDate today = LocalDate.now();
         List<Student> overdueStudents = studentRepository.findOverdueStudents(today);
+        if (overdueStudents == null || overdueStudents.isEmpty()) {
+            overdueStudents = studentRepository.findAll().stream()
+                    .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null && today.isAfter(s.getNextPaymentDueDate()))
+                    .collect(Collectors.toList());
+        }
 
         return overdueStudents.stream()
                 .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null && today.isAfter(s.getNextPaymentDueDate()))
-                .map(s -> PaymentDueDto.builder()
-                        .studentId(s.getStudentId())
-                        .studentName(s.getFullName())
-                        .mobileNumber(s.getMobileNumber())
-                        .roomNumber(s.getRoomNumber())
-                        .bedId(s.getBedId())
-                        .bedNumber(s.getBedNumber())
-                        .monthlyRent(s.getMonthlyRent())
-                        .nextPaymentDueDate(s.getNextPaymentDueDate())
-                        .lastPaymentDate(s.getLastPaymentDate())
-                        .overdue(true)
-                        .daysOverdue(ChronoUnit.DAYS.between(s.getNextPaymentDueDate(), today))
-                        .dueCategory("OVERDUE")
-                        .paymentStatus(s.getPaymentStatus() != null ? s.getPaymentStatus() : "PENDING")
-                        .build())
+                .filter(s -> !"PAID".equalsIgnoreCase(s.getPaymentStatus()))
+                .map(s -> {
+                    double rent = s.getMonthlyRent() != null ? s.getMonthlyRent() : 0.0;
+                    if ("HALF_PAID".equalsIgnoreCase(s.getPaymentStatus())) {
+                        rent = rent / 2.0;
+                    }
+                    long overdueDays = ChronoUnit.DAYS.between(s.getNextPaymentDueDate(), today);
+                    return PaymentDueDto.builder()
+                            .studentId(s.getStudentId())
+                            .studentName(s.getFullName())
+                            .mobileNumber(s.getMobileNumber())
+                            .roomNumber(s.getRoomNumber())
+                            .bedId(s.getBedId())
+                            .bedNumber(s.getBedNumber())
+                            .monthlyRent(rent)
+                            .nextPaymentDueDate(s.getNextPaymentDueDate())
+                            .lastPaymentDate(s.getLastPaymentDate())
+                            .overdue(true)
+                            .daysOverdue(overdueDays)
+                            .daysUntilDue(-overdueDays)
+                            .dueCategory("OVERDUE")
+                            .paymentStatus(s.getPaymentStatus() != null ? s.getPaymentStatus() : "PENDING")
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
     public List<PaymentDueDto> getDueSoonPayments() {
         LocalDate today = LocalDate.now();
         LocalDate sevenDaysAhead = today.plusDays(7);
-        List<Student> students = studentRepository.findStudentsDueBetween(today.plusDays(1), sevenDaysAhead);
-
-        return students.stream()
-                .filter(s -> s.getStatus() != StudentStatus.VACATED)
-                .map(s -> PaymentDueDto.builder()
-                        .studentId(s.getStudentId())
-                        .studentName(s.getFullName())
-                        .mobileNumber(s.getMobileNumber())
-                        .roomNumber(s.getRoomNumber())
-                        .bedId(s.getBedId())
-                        .bedNumber(s.getBedNumber())
-                        .monthlyRent(s.getMonthlyRent())
-                        .nextPaymentDueDate(s.getNextPaymentDueDate())
-                        .lastPaymentDate(s.getLastPaymentDate())
-                        .overdue(false)
-                        .daysOverdue(0)
-                        .dueCategory("DUE_SOON")
-                        .paymentStatus(s.getPaymentStatus())
-                        .build())
+        return studentRepository.findAll().stream()
+                .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null)
+                .filter(s -> !s.getNextPaymentDueDate().isBefore(today.plusDays(1)) && !s.getNextPaymentDueDate().isAfter(sevenDaysAhead))
+                .filter(s -> !"PAID".equalsIgnoreCase(s.getPaymentStatus()))
+                .map(s -> {
+                    double rent = s.getMonthlyRent() != null ? s.getMonthlyRent() : 0.0;
+                    if ("HALF_PAID".equalsIgnoreCase(s.getPaymentStatus())) {
+                        rent = rent / 2.0;
+                    }
+                    long daysUntil = ChronoUnit.DAYS.between(today, s.getNextPaymentDueDate());
+                    return PaymentDueDto.builder()
+                            .studentId(s.getStudentId())
+                            .studentName(s.getFullName())
+                            .mobileNumber(s.getMobileNumber())
+                            .roomNumber(s.getRoomNumber())
+                            .bedId(s.getBedId())
+                            .bedNumber(s.getBedNumber())
+                            .monthlyRent(rent)
+                            .nextPaymentDueDate(s.getNextPaymentDueDate())
+                            .lastPaymentDate(s.getLastPaymentDate())
+                            .overdue(false)
+                            .daysOverdue(0)
+                            .daysUntilDue(daysUntil)
+                            .dueCategory("DUE_SOON")
+                            .paymentStatus(s.getPaymentStatus())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
     public List<PaymentDueDto> getDueTodayPayments() {
         LocalDate today = LocalDate.now();
-        List<Student> students = studentRepository.findStudentsDueBetween(today, today);
-
-        return students.stream()
-                .filter(s -> s.getStatus() != StudentStatus.VACATED)
-                .map(s -> PaymentDueDto.builder()
-                        .studentId(s.getStudentId())
-                        .studentName(s.getFullName())
-                        .mobileNumber(s.getMobileNumber())
-                        .roomNumber(s.getRoomNumber())
-                        .bedId(s.getBedId())
-                        .bedNumber(s.getBedNumber())
-                        .monthlyRent(s.getMonthlyRent())
-                        .nextPaymentDueDate(s.getNextPaymentDueDate())
-                        .lastPaymentDate(s.getLastPaymentDate())
-                        .overdue(false)
-                        .daysOverdue(0)
-                        .dueCategory("DUE_TODAY")
-                        .paymentStatus(s.getPaymentStatus())
-                        .build())
+        return studentRepository.findAll().stream()
+                .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null)
+                .filter(s -> s.getNextPaymentDueDate().isEqual(today))
+                .filter(s -> !"PAID".equalsIgnoreCase(s.getPaymentStatus()))
+                .map(s -> {
+                    double rent = s.getMonthlyRent() != null ? s.getMonthlyRent() : 0.0;
+                    if ("HALF_PAID".equalsIgnoreCase(s.getPaymentStatus())) {
+                        rent = rent / 2.0;
+                    }
+                    return PaymentDueDto.builder()
+                            .studentId(s.getStudentId())
+                            .studentName(s.getFullName())
+                            .mobileNumber(s.getMobileNumber())
+                            .roomNumber(s.getRoomNumber())
+                            .bedId(s.getBedId())
+                            .bedNumber(s.getBedNumber())
+                            .monthlyRent(rent)
+                            .nextPaymentDueDate(s.getNextPaymentDueDate())
+                            .lastPaymentDate(s.getLastPaymentDate())
+                            .overdue(false)
+                            .daysOverdue(0)
+                            .daysUntilDue(0)
+                            .dueCategory("DUE_TODAY")
+                            .paymentStatus(s.getPaymentStatus())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

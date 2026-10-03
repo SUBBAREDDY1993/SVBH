@@ -17,6 +17,9 @@ export const paymentService = {
 
   async recordPayment(data: PaymentRequest): Promise<Payment> {
     const response = await api.post<ApiResponse<Payment>>('/payments', data);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
+    }
     return response.data.data!;
   },
 

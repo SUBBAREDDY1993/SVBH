@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -33,6 +34,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import EditIcon from '@mui/icons-material/Edit';
 import { studentService } from '../services/studentService';
 import { paymentService } from '../services/paymentService';
 import { allocationService } from '../services/allocationService';
@@ -41,6 +43,7 @@ import { StatusChip } from '../components/StatusChip';
 import { ReceiptModal } from '../components/ReceiptModal';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { PaymentReminderModal } from '../components/PaymentReminderModal';
+import { EditStudentModal } from '../components/EditStudentModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -86,6 +89,15 @@ export const StudentDetails: React.FC = () => {
   // Reminder Modal
   const [reminderModalOpen, setReminderModalOpen] = useState(false);
 
+  // Edit Student Modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editInitialTab, setEditInitialTab] = useState(0);
+
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isEditRoute = location.pathname.endsWith('/edit');
+  const autoEdit = searchParams.get('edit') === 'true' || isEditRoute;
+
   const loadData = async () => {
     if (!id) return;
     try {
@@ -111,6 +123,12 @@ export const StudentDetails: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [id]);
+
+  useEffect(() => {
+    if (autoEdit && student) {
+      setEditModalOpen(true);
+    }
+  }, [autoEdit, student]);
 
   const handleVacateConfirm = async () => {
     if (!student) return;
@@ -200,6 +218,23 @@ export const StudentDetails: React.FC = () => {
             sx={{ borderColor: '#cbd5e1', color: '#334155' }}
           >
             Print Profile
+          </Button>
+
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<EditIcon />}
+            onClick={() => {
+              setEditInitialTab(0);
+              setEditModalOpen(true);
+            }}
+            sx={{
+              fontWeight: 700,
+              bgcolor: '#1e40af',
+              '&:hover': { bgcolor: '#1d4ed8' },
+            }}
+          >
+            Edit Details
           </Button>
 
           {student.status !== 'VACATED' && (
@@ -356,9 +391,33 @@ export const StudentDetails: React.FC = () => {
           {/* Personal Info */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1e3a8a' }}>
-                Personal Information
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e3a8a' }}>
+                  Personal Information
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={() => {
+                    setEditInitialTab(0);
+                    setEditModalOpen(true);
+                  }}
+                  sx={{
+                    borderColor: '#bfdbfe',
+                    color: '#1d4ed8',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    py: 0.3,
+                    px: 1.2,
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#eff6ff', borderColor: '#93c5fd' },
+                  }}
+                >
+                  Edit
+                </Button>
+              </Box>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -407,9 +466,33 @@ export const StudentDetails: React.FC = () => {
           {/* Hostel Financial & Allocation Info */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1e3a8a' }}>
-                Hostel & Billing Details
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e3a8a' }}>
+                  Hostel & Billing Details
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={() => {
+                    setEditInitialTab(1);
+                    setEditModalOpen(true);
+                  }}
+                  sx={{
+                    borderColor: '#bfdbfe',
+                    color: '#1d4ed8',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    py: 0.3,
+                    px: 1.2,
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#eff6ff', borderColor: '#93c5fd' },
+                  }}
+                >
+                  Edit
+                </Button>
+              </Box>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -441,9 +524,30 @@ export const StudentDetails: React.FC = () => {
 
                 <Divider sx={{ my: 1 }} />
 
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155' }}>
-                  Emergency Contact
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155' }}>
+                    Emergency Contact
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="text"
+                    startIcon={<EditIcon fontSize="small" />}
+                    onClick={() => {
+                      setEditInitialTab(2);
+                      setEditModalOpen(true);
+                    }}
+                    sx={{
+                      color: '#1d4ed8',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      py: 0.2,
+                      px: 0.8,
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </Box>
                 {student.emergencyContact ? (
                   <Box sx={{ bgcolor: '#f8fafc', p: 1.5, borderRadius: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{student.emergencyContact.name}</Typography>
@@ -566,7 +670,36 @@ export const StudentDetails: React.FC = () => {
                 <TableBody>
                   {allocations.map((a) => (
                     <TableRow key={a.id} hover>
-                      <TableCell sx={{ fontWeight: 700 }}>{a.type}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={a.type}
+                          size="small"
+                          sx={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            bgcolor:
+                              a.type === 'INITIAL'
+                                ? '#dcfce7'
+                                : a.type === 'EXISTING'
+                                ? '#dbeafe'
+                                : a.type === 'REJOIN'
+                                ? '#f3e8ff'
+                                : a.type === 'TRANSFER'
+                                ? '#fef3c7'
+                                : '#fee2e2',
+                            color:
+                              a.type === 'INITIAL'
+                                ? '#15803d'
+                                : a.type === 'EXISTING'
+                                ? '#1d4ed8'
+                                : a.type === 'REJOIN'
+                                ? '#7e22ce'
+                                : a.type === 'TRANSFER'
+                                ? '#b45309'
+                                : '#b91c1c',
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>{a.fromRoom ? `Room ${a.fromRoom} (${a.fromBedId})` : '-'}</TableCell>
                       <TableCell>{a.toRoom ? `Room ${a.toRoom} (${a.toBedId})` : '-'}</TableCell>
                       <TableCell>{a.allocationDate ? new Date(a.allocationDate).toLocaleString() : 'N/A'}</TableCell>
@@ -759,6 +892,26 @@ export const StudentDetails: React.FC = () => {
               }
             : null
         }
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          if (isEditRoute && student) {
+            navigate(`/students/${student.studentId || id}`, { replace: true });
+          }
+        }}
+        student={student}
+        initialTab={editInitialTab}
+        onSuccess={(updated) => {
+          setStudent(updated);
+          loadData();
+          if (isEditRoute) {
+            navigate(`/students/${updated.studentId || id}`, { replace: true });
+          }
+        }}
       />
     </Box>
   );

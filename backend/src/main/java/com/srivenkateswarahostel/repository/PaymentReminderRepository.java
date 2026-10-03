@@ -14,6 +14,12 @@ public interface PaymentReminderRepository extends MongoRepository<PaymentRemind
 
     List<PaymentReminderLog> findByReminderDateOrderBySentAtDesc(LocalDate reminderDate);
 
+    List<PaymentReminderLog> findByReminderDateAndReminderSlotOrderBySentAtDesc(LocalDate reminderDate, String reminderSlot);
+
+    void deleteByReminderDateAndReminderSlot(LocalDate reminderDate, String reminderSlot);
+
+    void deleteByReminderDate(LocalDate reminderDate);
+
     List<PaymentReminderLog> findByStudentIdOrderBySentAtDesc(String studentId);
 
     List<PaymentReminderLog> findTop50ByOrderBySentAtDesc();

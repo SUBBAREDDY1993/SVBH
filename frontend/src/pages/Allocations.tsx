@@ -12,8 +12,10 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  InputAdornment,
   MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -28,10 +30,11 @@ import HistoryIcon from '@mui/icons-material/History';
 import PeopleIcon from '@mui/icons-material/People';
 import HotelIcon from '@mui/icons-material/Hotel';
 import EventNoteIcon from '@mui/icons-material/EventNote';
+import SearchIcon from '@mui/icons-material/Search';
 import { studentService } from '../services/studentService';
 import { roomService } from '../services/roomService';
 import { allocationService } from '../services/allocationService';
-import { AllocationHistory, Bed, Room, Student } from '../types';
+import { AllocationHistory, AllocationType, Bed, Room, Student } from '../types';
 import { useNotification } from '../context/NotificationContext';
 
 export const Allocations: React.FC = () => {
@@ -50,6 +53,45 @@ export const Allocations: React.FC = () => {
   const [targetBedId, setTargetBedId] = useState('');
   const [transferReason, setTransferReason] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
+
+  // Filter & Dropdown Type states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const getTypeStyle = (type: string) => {
+    switch (type) {
+      case 'INITIAL':
+        return { bg: '#dcfce7', color: '#15803d', border: '#86efac', dot: '#16a34a', label: 'INITIAL' };
+      case 'EXISTING':
+        return { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd', dot: '#2563eb', label: 'EXISTING' };
+      case 'REJOIN':
+        return { bg: '#f3e8ff', color: '#7e22ce', border: '#d8b4fe', dot: '#9333ea', label: 'REJOIN' };
+      case 'TRANSFER':
+        return { bg: '#fef3c7', color: '#b45309', border: '#fcd34d', dot: '#d97706', label: 'TRANSFER' };
+      case 'VACATE':
+        return { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', dot: '#dc2626', label: 'VACATE' };
+      default:
+        return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', dot: '#64748b', label: type || 'UNKNOWN' };
+    }
+  };
+
+  const handleUpdateType = async (id: string, newType: AllocationType) => {
+    try {
+      setUpdatingId(id);
+      // Optimistic update
+      setHistories((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, type: newType } : item))
+      );
+      await allocationService.updateAllocationType(id, newType);
+      showSuccess(`Allocation type updated to ${newType}!`);
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to update allocation type');
+      loadData();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -124,6 +166,21 @@ export const Allocations: React.FC = () => {
   };
 
   const selectedStudentObj = activeStudents.find((s) => s.studentId === selectedStudentId);
+
+  const filteredHistories = histories.filter((h) => {
+    const matchesType = typeFilter === 'ALL' || h.type === typeFilter;
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      (h.studentName && h.studentName.toLowerCase().includes(q)) ||
+      (h.studentId && h.studentId.toLowerCase().includes(q)) ||
+      (h.toRoom && h.toRoom.toLowerCase().includes(q)) ||
+      (h.toBedId && h.toBedId.toLowerCase().includes(q)) ||
+      (h.fromRoom && h.fromRoom.toLowerCase().includes(q)) ||
+      (h.fromBedId && h.fromBedId.toLowerCase().includes(q)) ||
+      (h.remarks && h.remarks.toLowerCase().includes(q));
+    return matchesType && matchesSearch;
+  });
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -206,11 +263,66 @@ export const Allocations: React.FC = () => {
 
       {/* Allocation History Table */}
       <Paper className="pro-card" sx={{ overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.2, borderBottom: '1px solid #e2e8f0', bgcolor: '#f8fafc' }}>
-          <HistoryIcon sx={{ color: '#1e3a8a' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
-            Allocation & Transfer Audit History
-          </Typography>
+        <Box
+          sx={{
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+            borderBottom: '1px solid #e2e8f0',
+            bgcolor: '#f8fafc',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+            <HistoryIcon sx={{ color: '#1e3a8a' }} />
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                Allocation & Transfer Audit History
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                Showing {filteredHistories.length} of {histories.length} records • Click Type dropdown to update anytime
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <TextField
+              size="small"
+              placeholder="Search resident, room, bed..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: { xs: '100%', sm: 220 },
+                bgcolor: '#fff',
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
+              }}
+            />
+
+            <TextField
+              select
+              size="small"
+              label="Filter by Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              sx={{ minWidth: 150, bgcolor: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            >
+              <MenuItem value="ALL">All Types ({histories.length})</MenuItem>
+              <MenuItem value="INITIAL">INITIAL ({histories.filter((h) => h.type === 'INITIAL').length})</MenuItem>
+              <MenuItem value="EXISTING">EXISTING ({histories.filter((h) => h.type === 'EXISTING').length})</MenuItem>
+              <MenuItem value="REJOIN">REJOIN ({histories.filter((h) => h.type === 'REJOIN').length})</MenuItem>
+              <MenuItem value="TRANSFER">TRANSFER ({histories.filter((h) => h.type === 'TRANSFER').length})</MenuItem>
+              <MenuItem value="VACATE">VACATE ({histories.filter((h) => h.type === 'VACATE').length})</MenuItem>
+            </TextField>
+          </Box>
         </Box>
 
         {isLoading ? (
@@ -238,6 +350,25 @@ export const Allocations: React.FC = () => {
               Allocation events, bed assignments, and transfer audits will appear here.
             </Typography>
           </Box>
+        ) : filteredHistories.length === 0 ? (
+          <Box sx={{ p: 6, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ color: '#334155', fontWeight: 700 }}>
+              No allocation records match your filter
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5, mb: 2 }}>
+              Try adjusting your search query or selecting "All Types".
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setSearchQuery('');
+                setTypeFilter('ALL');
+              }}
+            >
+              Clear Filters
+            </Button>
+          </Box>
         ) : (
           <TableContainer>
             <Table>
@@ -253,31 +384,75 @@ export const Allocations: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {histories.map((h) => {
+                {filteredHistories.map((h) => {
                   const initial = h.studentName ? h.studentName.charAt(0).toUpperCase() : 'S';
+                  const style = getTypeStyle(h.type);
+                  const isRowUpdating = updatingId === h.id;
+
                   return (
                     <TableRow key={h.id} hover sx={{ '&:hover': { bgcolor: '#fcfdfd' } }}>
-                      <TableCell>
-                        <Chip
-                          label={h.type}
+                      <TableCell sx={{ minWidth: 140 }}>
+                        <Select
+                          value={h.type || 'INITIAL'}
+                          onChange={(e) => handleUpdateType(h.id, e.target.value as AllocationType)}
+                          disabled={isRowUpdating}
                           size="small"
+                          variant="outlined"
                           sx={{
                             fontSize: '0.72rem',
                             fontWeight: 700,
-                            bgcolor:
-                              h.type === 'INITIAL'
-                                ? '#dcfce7'
-                                : h.type === 'TRANSFER'
-                                ? '#fef3c7'
-                                : '#fee2e2',
-                            color:
-                              h.type === 'INITIAL'
-                                ? '#15803d'
-                                : h.type === 'TRANSFER'
-                                ? '#b45309'
-                                : '#b91c1c',
+                            bgcolor: style.bg,
+                            color: style.color,
+                            borderRadius: '16px',
+                            height: 28,
+                            minWidth: 110,
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: style.border,
+                              borderWidth: '1.5px',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: style.color,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: style.color,
+                            },
+                            '& .MuiSelect-select': {
+                              py: '2px !important',
+                              px: '10px !important',
+                              pr: '24px !important',
+                              display: 'flex',
+                              alignItems: 'center',
+                            },
+                            '& .MuiSvgIcon-root': {
+                              color: style.color,
+                              fontSize: '1rem',
+                              right: 4,
+                            },
                           }}
-                        />
+                        >
+                          <MenuItem value="INITIAL" sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#15803d' }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#16a34a', mr: 1 }} />
+                            INITIAL
+                          </MenuItem>
+                          <MenuItem value="EXISTING" sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#1d4ed8' }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#2563eb', mr: 1 }} />
+                            EXISTING
+                          </MenuItem>
+                          <MenuItem value="REJOIN" sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#7e22ce' }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#9333ea', mr: 1 }} />
+                            REJOIN
+                          </MenuItem>
+                          <MenuItem value="TRANSFER" sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#b45309' }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#d97706', mr: 1 }} />
+                            TRANSFER
+                          </MenuItem>
+                          <MenuItem value="VACATE" sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#b91c1c' }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#dc2626', mr: 1 }} />
+                            VACATE
+                          </MenuItem>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>

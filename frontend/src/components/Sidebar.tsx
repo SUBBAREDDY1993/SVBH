@@ -59,14 +59,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose, drawerWid
     <Box
       sx={{
         height: '100%',
+        minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#0f172a', // Deep slate navy
         color: '#e2e8f0',
+        overflow: 'hidden',
       }}
     >
       {/* Brand Header */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
         <img src="/logo.svg" alt="SVBH Logo" style={{ width: 36, height: 36 }} />
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.2, letterSpacing: -0.2 }}>
@@ -78,10 +80,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose, drawerWid
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', flexShrink: 0 }} />
 
       {/* Navigation Links */}
-      <List sx={{ px: 1.5, py: 2, flexGrow: 1 }}>
+      <List
+        sx={{
+          px: 1.5,
+          py: 1.5,
+          flexGrow: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(255, 255, 255, 0.15)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'rgba(255, 255, 255, 0.3)',
+          },
+        }}
+      >
         {navItems.map((item) => {
           if (item.adminOnly && !isAdmin) return null;
           const isSelected =
@@ -126,10 +149,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose, drawerWid
         })}
       </List>
 
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', flexShrink: 0 }} />
 
       {/* User Info & Logout Footer */}
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: 2, flexShrink: 0, backgroundColor: '#0f172a' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ overflow: 'hidden' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -167,7 +190,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose, drawerWid
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, border: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+            border: 'none',
+            backgroundColor: '#0f172a',
+            color: '#e2e8f0',
+          },
         }}
       >
         {drawerContent}
@@ -178,7 +207,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose, drawerWid
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, border: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+            border: 'none',
+            backgroundColor: '#0f172a',
+            color: '#e2e8f0',
+          },
         }}
         open
       >

@@ -28,6 +28,7 @@ public class DashboardService {
     private final PaymentRepository paymentRepository;
     private final StudentService studentService;
     private final PaymentService paymentService;
+    private final PaymentReminderService paymentReminderService;
 
     public DashboardStatsDto getDashboardStats() {
         int totalBeds = (int) bedRepository.count();
@@ -119,6 +120,8 @@ public class DashboardService {
                 .upcomingDues(upcomingDues)
                 .recentlyVacated(recentlyVacated)
                 .alerts(alerts)
+                .feeReminders(paymentReminderService.getActiveFeeReminders())
+                .reminderCounts(paymentReminderService.getReminderCounts())
                 .build();
     }
 }

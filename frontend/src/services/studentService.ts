@@ -25,30 +25,36 @@ export const studentService = {
 
   async admitStudent(data: StudentAdmissionRequest): Promise<Student> {
     const response = await api.post<ApiResponse<Student>>('/students', data);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
     return response.data.data!;
   },
 
   async updateStudent(id: string, data: StudentUpdateRequest): Promise<Student> {
     const response = await api.put<ApiResponse<Student>>(`/students/${id}`, data);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
     return response.data.data!;
   },
 
   async markNoticePeriod(id: string, data: NoticePeriodRequest): Promise<Student> {
     const response = await api.post<ApiResponse<Student>>(`/students/${id}/notice`, data);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
     return response.data.data!;
   },
 
   async vacateStudent(id: string, data: VacateStudentRequest): Promise<Student> {
     const response = await api.post<ApiResponse<Student>>(`/students/${id}/vacate`, data);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
     return response.data.data!;
   },
 
   async deleteStudent(id: string): Promise<void> {
     await api.delete<ApiResponse<void>>(`/students/${id}`);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
   },
 
   async updatePaymentStatus(id: string, status: 'PAID' | 'PENDING' | 'HALF_PAID'): Promise<Student> {
     const response = await api.patch<ApiResponse<Student>>(`/students/${id}/payment-status?status=${status}`);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('svbh-refresh-data'));
     return response.data.data!;
   },
 };

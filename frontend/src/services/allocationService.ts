@@ -1,5 +1,5 @@
 import api from './api';
-import { AllocationHistory, ApiResponse, BedTransferRequest, Student } from '../types';
+import { AllocationHistory, AllocationType, ApiResponse, BedTransferRequest, Student } from '../types';
 
 export const allocationService = {
   async transferBed(studentId: string, data: BedTransferRequest): Promise<Student> {
@@ -12,4 +12,10 @@ export const allocationService = {
     const response = await api.get<ApiResponse<AllocationHistory[]>>(url);
     return response.data.data || [];
   },
+
+  async updateAllocationType(id: string, type: AllocationType): Promise<AllocationHistory> {
+    const response = await api.patch<ApiResponse<AllocationHistory>>(`/allocations/${id}/type?type=${type}`, { type });
+    return response.data.data!;
+  },
 };
+

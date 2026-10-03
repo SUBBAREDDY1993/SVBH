@@ -35,4 +35,6 @@ public class DashboardStatsDto {
     private List<PaymentDueDto> upcomingDues;
     private List<StudentResponseDto> recentlyVacated;
     private List<String> alerts;
+    private List<FeeReminderDto> feeReminders;
+    private ReminderCountsDto reminderCounts;
 }

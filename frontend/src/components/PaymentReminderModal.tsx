@@ -24,6 +24,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PhoneIcon from '@mui/icons-material/Phone';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import NightsStayIcon from '@mui/icons-material/NightsStay';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { PaymentDue } from '../types';
 import { reminderService } from '../services/reminderService';
@@ -43,7 +44,7 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
   onReminderLogged,
 }) => {
   const { showSuccess, showError } = useNotification();
-  const [templateType, setTemplateType] = useState<number>(0); // 0: Morning, 1: Evening, 2: Urgent
+  const [templateType, setTemplateType] = useState<number>(0); // 0: Morning, 1: Evening, 2: Night, 3: Urgent
   const [customMessage, setCustomMessage] = useState<string>('');
 
   useEffect(() => {
@@ -64,6 +65,8 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
       statusLine = `your monthly hostel rent of ₹${amountStr} is *${daysOverdue} days OVERDUE and PENDING* (Due date: ${dueDateStr})`;
     } else if (daysOverdue === 0 && dueItem.dueCategory === 'DUE_TODAY') {
       statusLine = `your monthly hostel rent of ₹${amountStr} is *DUE TODAY* (${dueDateStr})`;
+    } else if (dueItem.daysUntilDue !== undefined && dueItem.daysUntilDue > 0) {
+      statusLine = `your monthly hostel rent of ₹${amountStr} is *due in ${dueItem.daysUntilDue} day${dueItem.daysUntilDue === 1 ? '' : 's'} on ${dueDateStr}*`;
     } else {
       statusLine = `your monthly hostel rent of ₹${amountStr} is *due soon on ${dueDateStr}*`;
     }
@@ -98,6 +101,23 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
           `📅 *Due Date:* ${dueDateStr}\n\n` +
           `Please ensure the payment is completed today to avoid any inconvenience.\n\n` +
           `_If already paid, please ignore this notice._\n\n` +
+          `Thank you,\n` +
+          `- Sri Venkateswara Boys Hostel Management\n` +
+          `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
+          `📞 Phone: +91 9441843574 | ✉️ svbhostel2026@gmail.com`
+      );
+    } else if (templateType === 2) {
+      // Night Template (9 PM)
+      setCustomMessage(
+        `📢 *Sri Venkateswara Boys Hostel - Night Fee Follow-up*\n\n` +
+          `Hello ${dueItem.studentName},\n\n` +
+          `This is a night follow-up regarding your hostel accommodation fee: ${statusLine}.\n\n` +
+          `🏠 *Room & Bed:* Room ${dueItem.roomNumber} (Bed ${dueItem.bedId})\n` +
+          (isHalfPaid ? `💰 *Total Monthly Rent:* ₹${totalRentStr}\n` : '') +
+          `💳 *${isHalfPaid ? 'Remaining Balance Pending' : 'Amount Due'}:* ₹${amountStr}\n` +
+          `📅 *Due Date:* ${dueDateStr}\n\n` +
+          `Please settle your payment tonight or by tomorrow morning at the hostel office or via UPI to keep your accommodation in good standing.\n\n` +
+          `_If you have already paid today, please ignore this notice._\n\n` +
           `Thank you,\n` +
           `- Sri Venkateswara Boys Hostel Management\n` +
           `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
@@ -307,6 +327,7 @@ export const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
         >
           <Tab icon={<WbSunnyIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Morning" />
           <Tab icon={<NightsStayIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Evening" />
+          <Tab icon={<DarkModeIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Night (9 PM)" />
           <Tab icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Urgent Notice" />
         </Tabs>
 

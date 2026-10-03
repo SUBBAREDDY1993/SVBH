@@ -106,6 +106,21 @@ public class AllocationService {
         return allocationHistoryRepository.findAllByOrderByAllocationDateDesc();
     }
 
+    @Transactional
+    public AllocationHistory updateAllocationType(String id, AllocationType type) {
+        AllocationHistory history = allocationHistoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Allocation record not found: " + id));
+
+        AllocationType oldType = history.getType();
+        history.setType(type);
+        AllocationHistory saved = allocationHistoryRepository.save(history);
+
+        auditService.log("UPDATE_TYPE", "ALLOCATION", id,
+                "Updated allocation type from " + oldType + " to " + type + " for student " + saved.getStudentName());
+
+        return saved;
+    }
+
     private String getCurrentUsername() {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();

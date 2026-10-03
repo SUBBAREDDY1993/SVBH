@@ -37,6 +37,9 @@ public class StudentUpdateRequest {
     private String state;
     private String pincode;
 
+    private LocalDate joiningDate;
+    private LocalDate nextPaymentDueDate;
+
     @Min(value = 1, message = "Monthly rent must be greater than 0")
     private Double monthlyRent;
 

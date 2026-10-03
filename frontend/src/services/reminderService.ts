@@ -1,7 +1,17 @@
 import api from './api';
-import { ApiResponse, PaymentReminder, ReminderBatchResult } from '../types';
+import { AdminDueAlert, ApiResponse, FeeReminder, PaymentReminder, ReminderBatchResult, ReminderCounts } from '../types';
 
 export const reminderService = {
+  async getActiveReminders(): Promise<FeeReminder[]> {
+    const response = await api.get<ApiResponse<FeeReminder[]>>('/reminders');
+    return response.data.data || [];
+  },
+
+  async getReminderCounts(): Promise<ReminderCounts> {
+    const response = await api.get<ApiResponse<ReminderCounts>>('/reminders/counts');
+    return response.data.data || { upcomingFees: 0, dueToday: 0, overdue: 0, paid: 0, totalActive: 0 };
+  },
+
   async getTodayReminders(): Promise<PaymentReminder[]> {
     const response = await api.get<ApiResponse<PaymentReminder[]>>('/reminders/today');
     return response.data.data || [];
@@ -12,11 +22,17 @@ export const reminderService = {
     return response.data.data || [];
   },
 
-  async triggerBatch(slot: 'MORNING' | 'EVENING', force = false): Promise<ReminderBatchResult> {
+  async triggerBatch(slot: 'MORNING' | 'EVENING' | 'NIGHT', force = false): Promise<ReminderBatchResult> {
     const response = await api.post<ApiResponse<ReminderBatchResult>>(
       `/reminders/trigger?slot=${slot}&force=${force}`
     );
     return response.data.data!;
+  },
+
+  async resetToday(slot?: string): Promise<void> {
+    const params = new URLSearchParams();
+    if (slot) params.append('slot', slot);
+    await api.post(`/reminders/reset-today?${params.toString()}`);
   },
 
   async recordManualReminder(
@@ -33,4 +49,15 @@ export const reminderService = {
     const response = await api.post<ApiResponse<PaymentReminder>>(`/reminders/record?${params.toString()}`);
     return response.data.data!;
   },
+
+  async getAdminDueAlert(): Promise<AdminDueAlert> {
+    const response = await api.get<ApiResponse<AdminDueAlert>>('/reminders/admin-alert');
+    return response.data.data!;
+  },
+
+  async sendAdminDueAlert(force = false): Promise<AdminDueAlert> {
+    const response = await api.post<ApiResponse<AdminDueAlert>>(`/reminders/admin-alert/send?force=${force}`);
+    return response.data.data!;
+  },
 };
+

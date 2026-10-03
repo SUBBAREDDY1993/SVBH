@@ -4,7 +4,12 @@ import {
   Alert,
   Avatar,
   Box,
+  Button,
+  Chip,
+  CircularProgress,
+  IconButton,
   Skeleton,
+  Tooltip,
 } from '@mui/material';
 import HotelIcon from '@mui/icons-material/Hotel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -13,12 +18,19 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import PaymentIcon from '@mui/icons-material/Payment';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { dashboardService } from '../services/dashboardService';
-import { DashboardStats, Payment } from '../types';
+import { reminderService } from '../services/reminderService';
+import { DashboardStats, FeeReminder, Payment, ReminderCounts } from '../types';
 import { StatusChip } from '../components/StatusChip';
 import { ReceiptModal } from '../components/ReceiptModal';
 import { MetricSkeleton } from '../components/Skeletons';
@@ -28,6 +40,13 @@ export const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+
+  // Live Fee Reminders State (Requirements 1, 2, 3, 4, 8, 9, 10)
+  const [reminders, setReminders] = useState<FeeReminder[]>([]);
+  const [reminderCounts, setReminderCounts] = useState<ReminderCounts | null>(null);
+  const [isLoadingReminders, setIsLoadingReminders] = useState(true);
+  const [reminderError, setReminderError] = useState<string | null>(null);
+  const [reminderFilter, setReminderFilter] = useState<'ALL' | 'OVERDUE' | 'DUE_TODAY' | 'DUE_TOMORROW' | 'UPCOMING'>('ALL');
 
   const navigate = useNavigate();
 
@@ -43,8 +62,36 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const loadReminders = async () => {
+    try {
+      setIsLoadingReminders(true);
+      setReminderError(null);
+      const [rems, counts] = await Promise.all([
+        reminderService.getActiveReminders(),
+        reminderService.getReminderCounts(),
+      ]);
+      setReminders(rems);
+      setReminderCounts(counts);
+    } catch (error) {
+      console.error('Failed to load fee reminders:', error);
+      setReminderError('Unable to load reminders. Please try again.');
+    } finally {
+      setIsLoadingReminders(false);
+    }
+  };
+
   useEffect(() => {
     loadDashboard();
+    loadReminders();
+
+    // Auto Refresh on student add/update, fee due change, payment record (Requirement 8)
+    const handleRefresh = () => {
+      loadDashboard();
+      loadReminders();
+    };
+
+    window.addEventListener('svbh-refresh-data', handleRefresh);
+    return () => window.removeEventListener('svbh-refresh-data', handleRefresh);
   }, []);
 
   const openReceipt = (payment: Payment) => {
@@ -65,6 +112,14 @@ export const Dashboard: React.FC = () => {
   }
 
   if (!stats) return null;
+
+  const filteredReminders = reminders.filter((r) => {
+    if (reminderFilter === 'OVERDUE') return r.status === 'OVERDUE' || r.daysRemaining < 0;
+    if (reminderFilter === 'DUE_TODAY') return r.status === 'DUE_TODAY' || r.daysRemaining === 0;
+    if (reminderFilter === 'DUE_TOMORROW') return r.daysRemaining === 1;
+    if (reminderFilter === 'UPCOMING') return r.daysRemaining >= 2 && r.daysRemaining <= 7;
+    return true;
+  });
 
   return (
     <div className="pb-5">
@@ -147,6 +202,368 @@ export const Dashboard: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Dynamic Summary Counts (Requirement 4: Upcoming Fees, Due Today, Overdue, Paid) */}
+      <div className="row g-3 mb-4">
+        {/* Card 1: Upcoming Fees */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div
+            className={`dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-primary rounded-4 bg-white ${reminderFilter === 'UPCOMING' ? 'shadow-md border-primary' : ''}`}
+            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setReminderFilter(reminderFilter === 'UPCOMING' ? 'ALL' : 'UPCOMING')}
+            title="Filter by upcoming fees"
+          >
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-primary">Upcoming Fees</span>
+                <div className="metric-val text-dark">
+                  {reminderCounts ? reminderCounts.upcomingFees : <Skeleton width={50} height={36} />}
+                </div>
+                <div className="metric-sub text-muted">
+                  <i className="bi bi-calendar-event me-1 text-primary"></i> Due within 7 days
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-primary">
+                <ScheduleIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Due Today */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div
+            className={`dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-warning rounded-4 bg-white ${reminderFilter === 'DUE_TODAY' ? 'shadow-md' : ''}`}
+            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setReminderFilter(reminderFilter === 'DUE_TODAY' ? 'ALL' : 'DUE_TODAY')}
+            title="Filter by due today"
+          >
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-warning">Due Today</span>
+                <div className="metric-val text-warning">
+                  {reminderCounts ? reminderCounts.dueToday : <Skeleton width={50} height={36} />}
+                </div>
+                <div className="metric-sub text-warning fw-semibold">
+                  <i className="bi bi-clock-fill me-1"></i> Payable today
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-warning">
+                <NotificationImportantIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Overdue */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div
+            className={`dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-danger rounded-4 bg-white ${reminderFilter === 'OVERDUE' ? 'shadow-md' : ''}`}
+            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setReminderFilter(reminderFilter === 'OVERDUE' ? 'ALL' : 'OVERDUE')}
+            title="Filter by overdue"
+          >
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-danger">Overdue</span>
+                <div className="metric-val text-danger">
+                  {reminderCounts ? reminderCounts.overdue : <Skeleton width={50} height={36} />}
+                </div>
+                <div className="metric-sub text-danger fw-semibold">
+                  <i className="bi bi-exclamation-triangle-fill me-1"></i> Past due date
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-danger">
+                <WarningAmberIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Paid */}
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div
+            className="dashboard-kpi-card h-100 p-3 p-lg-4 border-start border-4 border-success rounded-4 bg-white"
+            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => navigate('/payments')}
+            title="View completed payments"
+          >
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <span className="metric-label text-success">Paid</span>
+                <div className="metric-val text-success">
+                  {reminderCounts ? reminderCounts.paid : <Skeleton width={50} height={36} />}
+                </div>
+                <div className="metric-sub text-success fw-semibold">
+                  <i className="bi bi-check-circle-fill me-1"></i> Settled this cycle
+                </div>
+              </div>
+              <div className="kpi-icon-box badge-soft-success">
+                <CheckCircleIcon fontSize="small" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Clearly Visible FEE REMINDERS Section (Requirements 1, 2, 3, 8, 9, 10) */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" id="fee-reminders">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-2.5">
+            <div className="kpi-icon-box badge-soft-warning rounded-3" style={{ width: '42px', height: '42px' }}>
+              <NotificationsActiveIcon sx={{ color: '#d97706', fontSize: 24 }} />
+            </div>
+            <div>
+              <div className="d-flex align-items-center gap-2">
+                <h5 className="fw-bolder text-dark mb-0 tracking-tight text-uppercase">
+                  FEE REMINDERS
+                </h5>
+                <span className="badge bg-warning text-dark rounded-pill px-2.5 py-1 fw-bold font-monospace">
+                  {reminders.length} Active
+                </span>
+              </div>
+              <p className="text-muted small mb-0">
+                Student fee due notices, countdowns, and instant collection alerts
+              </p>
+            </div>
+          </div>
+
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            {/* Filter buttons */}
+            <div className="btn-group btn-group-sm rounded-3 shadow-2xs" role="group">
+              <button
+                type="button"
+                className={`btn ${reminderFilter === 'ALL' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+                onClick={() => setReminderFilter('ALL')}
+              >
+                All ({reminders.length})
+              </button>
+              <button
+                type="button"
+                className={`btn ${reminderFilter === 'OVERDUE' ? 'btn-danger' : 'btn-outline-secondary bg-white'}`}
+                onClick={() => setReminderFilter('OVERDUE')}
+              >
+                Overdue ({reminderCounts?.overdue ?? 0})
+              </button>
+              <button
+                type="button"
+                className={`btn ${reminderFilter === 'DUE_TODAY' ? 'btn-warning text-dark' : 'btn-outline-secondary bg-white'}`}
+                onClick={() => setReminderFilter('DUE_TODAY')}
+              >
+                Due Today ({reminderCounts?.dueToday ?? 0})
+              </button>
+              <button
+                type="button"
+                className={`btn ${reminderFilter === 'UPCOMING' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+                onClick={() => setReminderFilter('UPCOMING')}
+              >
+                Upcoming ({reminderCounts?.upcomingFees ?? 0})
+              </button>
+            </div>
+
+            <IconButton
+              size="small"
+              onClick={loadReminders}
+              disabled={isLoadingReminders}
+              title="Refresh Fee Reminders"
+              sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}
+            >
+              <RefreshIcon
+                fontSize="small"
+                sx={{
+                  animation: isLoadingReminders ? 'spin 1s linear infinite' : 'none',
+                  '@keyframes spin': {
+                    '0%': { transform: 'rotate(0deg)' },
+                    '100%': { transform: 'rotate(360deg)' },
+                  },
+                }}
+              />
+            </IconButton>
+
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary fw-semibold px-3 rounded-3"
+              onClick={() => navigate('/payments/due')}
+            >
+              Due Matrix <i className="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        {/* Loading State (Requirement 10) */}
+        {isLoadingReminders && reminders.length === 0 ? (
+          <div className="p-5 text-center my-2">
+            <CircularProgress size={36} sx={{ color: '#2563eb', mb: 2 }} />
+            <h6 className="fw-bold text-dark mb-1">Loading reminders...</h6>
+            <p className="text-muted small mb-0">Checking upcoming fee due dates and payment records</p>
+          </div>
+        ) : reminderError ? (
+          /* Error State (Requirement 10) */
+          <div className="p-4 text-center my-2 border border-danger-subtle rounded-3 bg-danger-subtle bg-opacity-25">
+            <WarningAmberIcon sx={{ color: '#dc2626', fontSize: 36, mb: 1 }} />
+            <h6 className="fw-bold text-danger mb-1">Unable to load reminders.</h6>
+            <p className="text-muted small mb-3">Please try again.</p>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger fw-semibold px-4 rounded-pill shadow-sm"
+              onClick={loadReminders}
+            >
+              <i className="bi bi-arrow-clockwise me-1"></i> Retry
+            </button>
+          </div>
+        ) : filteredReminders.length === 0 ? (
+          /* Empty State (Requirement 9) */
+          <div className="p-5 text-center my-2 rounded-3 bg-light border border-dashed">
+            <span className="display-5 d-block mb-2">🎉</span>
+            <h5 className="fw-bold text-dark mb-1">No pending fee reminders 🎉</h5>
+            <p className="text-muted small mb-3">
+              {reminderFilter !== 'ALL'
+                ? `No reminders matching the selected "${reminderFilter.toLowerCase().replace('_', ' ')}" filter.`
+                : 'All student fee payments are up to date and no fees are due or overdue at this time.'}
+            </p>
+            {reminderFilter !== 'ALL' && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary fw-semibold px-3 rounded-pill"
+                onClick={() => setReminderFilter('ALL')}
+              >
+                Show All Reminders
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Cards Grid (Requirement 3: Ravi Kumar, Room 203 | Bed 2, Fee ₹5,000, Due Date 05-Oct-2026, ⚠ Payment due in 2 days) */
+          <div className="row g-3 pt-2">
+            {filteredReminders.map((rem) => {
+              const isOverdue = rem.daysRemaining < 0;
+              const isToday = rem.daysRemaining === 0;
+              const isTomorrow = rem.daysRemaining === 1;
+
+              // Border and styling accents
+              const borderColor = isOverdue
+                ? '#ef4444'
+                : isToday
+                ? '#f59e0b'
+                : isTomorrow
+                ? '#f97316'
+                : rem.daysRemaining <= 3
+                ? '#eab308'
+                : '#3b82f6';
+
+              const urgencyBadgeClass = isOverdue
+                ? 'bg-danger-subtle text-danger border border-danger-subtle'
+                : isToday
+                ? 'bg-warning-subtle text-dark border border-warning-subtle'
+                : isTomorrow
+                ? 'bg-warning-subtle text-dark border border-warning'
+                : rem.daysRemaining <= 3
+                ? 'bg-warning-subtle text-dark border border-warning-subtle'
+                : 'bg-primary-subtle text-primary border border-primary-subtle';
+
+              // Requirement 2:
+              // Due in 7 days -> Upcoming reminder
+              // Due in 3 days -> Payment reminder
+              // Due tomorrow -> Urgent reminder / Payment due tomorrow
+              // Due today -> Payment due today
+              // Past due date -> Overdue reminder
+              const statusText = isOverdue
+                ? `Payment overdue by ${Math.abs(rem.daysRemaining)} day${Math.abs(rem.daysRemaining) === 1 ? '' : 's'}`
+                : isToday
+                ? 'Payment due today'
+                : isTomorrow
+                ? 'Payment due tomorrow'
+                : `Payment due in ${rem.daysRemaining} days`;
+
+              return (
+                <div key={rem.studentId} className="col-12 col-md-6 col-xl-4">
+                  <div
+                    className="card h-100 border-0 shadow-sm rounded-4 p-3.5 bg-white position-relative"
+                    style={{
+                      borderLeft: `5px solid ${borderColor}`,
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    }}
+                  >
+                    {/* Header: Student Name & Payment Status */}
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6
+                          className="fw-bolder text-dark mb-0 text-truncate"
+                          style={{ cursor: 'pointer', maxWidth: '210px' }}
+                          title={rem.studentName}
+                          onClick={() => navigate(`/students/${rem.studentId}`)}
+                        >
+                          {rem.studentName}
+                        </h6>
+                        <div className="text-muted small mt-0.5">
+                          <i className="bi bi-door-closed me-1"></i>
+                          Room: <strong>{rem.roomNumber}</strong> | Bed: <strong>{rem.bedNumber || rem.bedId}</strong>
+                        </div>
+                      </div>
+                      <span
+                        className={`badge ${rem.paymentStatus === 'HALF_PAID' ? 'bg-warning text-dark' : 'bg-secondary-subtle text-secondary'} rounded-pill px-2.5 py-1 fw-bold`}
+                        style={{ fontSize: '0.72rem' }}
+                      >
+                        {rem.paymentStatus === 'HALF_PAID' ? 'HALF PAID' : 'PENDING'}
+                      </span>
+                    </div>
+
+                    {/* Fee & Due Date Box */}
+                    <div className="d-flex justify-content-between align-items-center py-2 px-3 my-2 rounded-3 bg-light border">
+                      <div>
+                        <span className="text-muted d-block" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em' }}>
+                          FEE AMOUNT
+                        </span>
+                        <span className="fw-bolder fs-5 text-dark">
+                          ₹{rem.feeAmount?.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="text-end">
+                        <span className="text-muted d-block" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em' }}>
+                          DUE DATE
+                        </span>
+                        <span className="fw-bold text-dark font-monospace" style={{ fontSize: '0.9rem' }}>
+                          {rem.dueDateFormatted || rem.dueDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Urgency / Due Condition Notice */}
+                    <div className={`p-2 rounded-3 mb-3 d-flex align-items-center gap-2 ${urgencyBadgeClass}`}>
+                      <i className={`bi ${isOverdue ? 'bi-exclamation-octagon-fill text-danger' : isToday ? 'bi-exclamation-circle-fill text-warning' : 'bi-clock-history text-primary'}`}></i>
+                      <span className="fw-bold small">
+                        ⚠ {statusText}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons: WhatsApp & Record Payment */}
+                    <div className="d-flex gap-2 mt-auto">
+                      {rem.whatsappUrl ? (
+                        <a
+                          href={rem.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-success flex-grow-1 fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 rounded-3 shadow-2xs"
+                        >
+                          <i className="bi bi-whatsapp"></i>
+                          <span>WhatsApp</span>
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary flex-grow-1 fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 rounded-3 shadow-sm"
+                        onClick={() => navigate('/payments')}
+                      >
+                        <i className="bi bi-credit-card"></i>
+                        <span>Collect Fee</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* 8 Primary KPI Metric Cards (Bootstrap 5 Grid) */}
       <div className="row g-3 g-xl-4 mb-4">

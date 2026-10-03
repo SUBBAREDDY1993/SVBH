@@ -141,6 +141,7 @@ export interface StudentAdmissionRequest {
   monthlyRent: number;
   securityDeposit?: number;
   paymentDueDay?: number;
+  allocationType?: AllocationType;
   emergencyContact?: EmergencyContact;
   documents?: StudentDocument[];
 }
@@ -159,6 +160,8 @@ export interface StudentUpdateRequest {
   city?: string;
   state?: string;
   pincode?: string;
+  joiningDate?: string;
+  nextPaymentDueDate?: string;
   monthlyRent?: number;
   securityDeposit?: number;
   paymentDueDay?: number;
@@ -187,6 +190,8 @@ export interface NoticePeriodRequest {
   remarks?: string;
 }
 
+export type AllocationType = 'INITIAL' | 'EXISTING' | 'REJOIN' | 'TRANSFER' | 'VACATE';
+
 export interface AllocationHistory {
   id: string;
   studentId: string;
@@ -197,7 +202,7 @@ export interface AllocationHistory {
   toBedId?: string;
   allocationDate?: string;
   vacatedDate?: string;
-  type: 'INITIAL' | 'TRANSFER' | 'VACATE';
+  type: AllocationType;
   allocatedBy?: string;
   remarks?: string;
   createdAt?: string;
@@ -251,6 +256,7 @@ export interface PaymentDue {
   lastPaymentDate?: string;
   overdue: boolean;
   daysOverdue: number;
+  daysUntilDue?: number;
   dueCategory: 'DUE_TODAY' | 'DUE_SOON' | 'OVERDUE';
   paymentStatus?: 'PAID' | 'HALF_PAID' | 'PENDING';
 }
@@ -275,6 +281,36 @@ export interface DashboardStats {
   upcomingDues: PaymentDue[];
   recentlyVacated: Student[];
   alerts: string[];
+  feeReminders?: FeeReminder[];
+  reminderCounts?: ReminderCounts;
+}
+
+export interface FeeReminder {
+  studentId: string;
+  studentName: string;
+  roomNumber: string;
+  bedNumber: number;
+  bedId?: string;
+  mobileNumber?: string;
+  feeAmount: number;
+  dueDate: string;
+  dueDateFormatted?: string;
+  daysRemaining: number;
+  status: 'OVERDUE' | 'DUE_TODAY' | 'URGENT' | 'REMINDER' | 'UPCOMING' | string;
+  statusLabel: string;
+  urgency: 'CRITICAL' | 'URGENT' | 'MEDIUM' | 'NORMAL' | string;
+  paymentStatus: 'PENDING' | 'HALF_PAID' | 'PAID' | string;
+  message: string;
+  reminderText: string;
+  whatsappUrl?: string;
+}
+
+export interface ReminderCounts {
+  upcomingFees: number;
+  dueToday: number;
+  overdue: number;
+  paid: number;
+  totalActive: number;
 }
 
 export interface FloorOccupancy {
@@ -341,7 +377,7 @@ export interface PaymentReminder {
   amountDue: number;
   nextPaymentDueDate: string;
   daysUntilDue: number;
-  reminderSlot: 'MORNING' | 'EVENING' | 'MANUAL';
+  reminderSlot: 'MORNING' | 'EVENING' | 'NIGHT' | 'MANUAL';
   reminderDate: string;
   sentAt: string;
   channel: string;
@@ -358,6 +394,27 @@ export interface ReminderBatchResult {
   alreadyRemindedCount: number;
   message: string;
   reminders: PaymentReminder[];
+}
+
+export interface AdminDueAlert {
+  recipientEmail: string;
+  recipientMobile: string;
+  alertDate: string;
+  dueIn5DaysCount: number;
+  dueIn3DaysCount: number;
+  dueTodayCount?: number;
+  totalStudentsCount: number;
+  totalAmountDue: number;
+  studentsDueIn5Days: PaymentDue[];
+  studentsDueIn3Days: PaymentDue[];
+  studentsDueToday?: PaymentDue[];
+  digestMessage: string;
+  emailSubject: string;
+  emailHtmlBody?: string;
+  whatsappUrl: string;
+  status: string;
+  emailDelivered?: boolean;
+  emailDeliveryMessage?: string;
 }
 
 export type ExpenseCategory =
