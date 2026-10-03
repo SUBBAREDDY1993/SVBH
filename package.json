@@ -4,6 +4,7 @@
   "private": true,
   "description": "Sri Venkateswara Boys Hostel Management System",
   "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
     "dev": "concurrently -k -p \"[{name}]\" -n \"BACKEND,FRONTEND\" -c \"cyan.bold,magenta.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "mvn -f backend/pom.xml spring-boot:run",
     "dev:frontend": "npm run dev --prefix frontend",
