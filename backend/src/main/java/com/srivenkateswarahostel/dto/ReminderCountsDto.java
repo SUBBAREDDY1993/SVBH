@@ -15,4 +15,7 @@ public class ReminderCountsDto {
     private long overdue;
     private long paid;
     private long totalActive;
+    private boolean whatsAppConfigured;
+    private String whatsAppProvider;
 }
+

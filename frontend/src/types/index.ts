@@ -311,7 +311,10 @@ export interface ReminderCounts {
   overdue: number;
   paid: number;
   totalActive: number;
+  whatsAppConfigured?: boolean;
+  whatsAppProvider?: string;
 }
+
 
 export interface FloorOccupancy {
   floor: number;
@@ -418,9 +421,12 @@ export interface ReminderBatchResult {
   totalEligibleStudents: number;
   remindersSent: number;
   alreadyRemindedCount: number;
+  pendingCount?: number;
+  metaApiConfigured?: boolean;
   message: string;
   reminders: PaymentReminder[];
 }
+
 
 export interface AdminDueAlert {
   recipientEmail: string;

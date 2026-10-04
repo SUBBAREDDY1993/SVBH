@@ -59,10 +59,23 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
   const [isResetting, setIsResetting] = useState(false);
   const [sendingStudentId, setSendingStudentId] = useState<string | null>(null);
   const [isDispatchingAll, setIsDispatchingAll] = useState(false);
+  const [isMetaApiConfigured, setIsMetaApiConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     setRemindersList(initialReminders || []);
   }, [initialReminders]);
+
+  useEffect(() => {
+    reminderService
+      .getReminderCounts()
+      .then((counts) => {
+        setIsMetaApiConfigured(!!counts.whatsAppConfigured);
+      })
+      .catch(() => {
+        setIsMetaApiConfigured(false);
+      });
+  }, []);
+
 
   const sanitizePhone = (phone?: string) => {
     if (!phone) return '';
@@ -74,7 +87,7 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
    * Live dispatch via Meta WhatsApp Cloud API (or fallback to WhatsApp Web).
    * Enforces:
    * - Only marks SENT upon confirmed API response with message ID.
-   * - Sets FAILED with exact error message if API fails, and allows Retry.
+   * - If credentials are not set, opens WhatsApp Web and logs as Sent (WhatsApp Web).
    * - Never skips manual send.
    */
   const handleSendLiveWhatsApp = async (reminder: PaymentReminder, force = true) => {
@@ -82,20 +95,31 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
     try {
       const updated = await reminderService.sendStudentReminder(reminder.studentId, slot, force);
 
-      setRemindersList((prev) =>
-        prev.map((r) => (r.studentId === reminder.studentId ? { ...r, ...updated } : r))
-      );
-
       if (updated.status === 'SENT') {
+        setRemindersList((prev) =>
+          prev.map((r) => (r.studentId === reminder.studentId ? { ...r, ...updated } : r))
+        );
         showSuccess(`WhatsApp fee reminder sent successfully to ${reminder.studentName}! (ID: ${updated.whatsappMessageId || 'Confirmed'})`);
       } else if (updated.status === 'FAILED') {
+        setRemindersList((prev) =>
+          prev.map((r) => (r.studentId === reminder.studentId ? { ...r, ...updated } : r))
+        );
         showError(`WhatsApp dispatch failed for ${reminder.studentName}: ${updated.lastError || 'API rejected'}`);
       } else {
-        // Fallback: Open WhatsApp Web / App
+        // Fallback: Open WhatsApp Web / App AND record manual reminder so it updates to Sent!
         const cleanPhone = sanitizePhone(reminder.mobileNumber);
         const encoded = encodeURIComponent(reminder.message);
         window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
-        showWarning(`Opened WhatsApp chat for ${reminder.studentName}. (Set Meta Cloud API keys for direct background dispatch).`);
+
+        const recorded = await reminderService.recordManualReminder(reminder.studentId, 'WHATSAPP', reminder.message);
+        setRemindersList((prev) =>
+          prev.map((r) =>
+            r.studentId === reminder.studentId
+              ? { ...r, ...recorded, status: 'SENT', channel: 'WHATSAPP_WEB', sentAt: new Date().toISOString() }
+              : r
+          )
+        );
+        showSuccess(`Opened WhatsApp for ${reminder.studentName} and recorded as Sent (WhatsApp Web).`);
       }
       onRefresh?.();
     } catch (err: any) {
@@ -130,9 +154,9 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
   };
 
   /**
-   * Open direct WhatsApp chat via WhatsApp Web / App link.
+   * Open direct WhatsApp chat via WhatsApp Web / App link and record as sent.
    */
-  const handleOpenWhatsAppWeb = (reminder: PaymentReminder) => {
+  const handleOpenWhatsAppWeb = async (reminder: PaymentReminder) => {
     const cleanPhone = sanitizePhone(reminder.mobileNumber);
     if (!cleanPhone) {
       showError(`No valid mobile number found for ${reminder.studentName}`);
@@ -143,9 +167,55 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
       const encodedMsg = encodeURIComponent(reminder.message);
       url = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
     }
-    reminderService.recordManualReminder(reminder.studentId, 'WHATSAPP', reminder.message).catch(() => {});
     window.open(url, '_blank');
-    showSuccess(`Opened WhatsApp chat for ${reminder.studentName}`);
+    try {
+      const recorded = await reminderService.recordManualReminder(reminder.studentId, 'WHATSAPP', reminder.message);
+      setRemindersList((prev) =>
+        prev.map((r) =>
+          r.studentId === reminder.studentId
+            ? { ...r, ...recorded, status: 'SENT', channel: 'WHATSAPP_WEB', sentAt: new Date().toISOString() }
+            : r
+        )
+      );
+      showSuccess(`Opened WhatsApp chat for ${reminder.studentName} and recorded as Sent!`);
+      onRefresh?.();
+    } catch {
+      showSuccess(`Opened WhatsApp chat for ${reminder.studentName}`);
+    }
+  };
+
+  /**
+   * Open next pending resident sequentially in WhatsApp Web.
+   */
+  const handleOpenNextPending = async () => {
+    const pendingList = remindersList.filter(
+      (r) => r.status !== 'SENT' && r.status !== 'DELIVERED' && r.status !== 'READ'
+    );
+    if (pendingList.length === 0) {
+      showSuccess('All residents in this batch have already been dispatched!');
+      return;
+    }
+    const nextResident = pendingList[0];
+    await handleOpenWhatsAppWeb(nextResident);
+  };
+
+  /**
+   * Mark all pending reminders as Sent (for admins who broadcasted or sent via WhatsApp Web).
+   */
+  const handleMarkAllAsSent = async () => {
+    try {
+      setIsDispatchingAll(true);
+      const res = await reminderService.markAllAsSent(slot);
+      showSuccess(res.message || 'Marked all pending reminders as Sent via WhatsApp Web.');
+      if (res.reminders && res.reminders.length > 0) {
+        setRemindersList(res.reminders);
+      }
+      onRefresh?.();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to mark reminders as sent');
+    } finally {
+      setIsDispatchingAll(false);
+    }
   };
 
   /**
@@ -155,13 +225,19 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
     try {
       setIsDispatchingAll(true);
       const res = await reminderService.sendSkippedReminders(slot);
-      showSuccess(`Dispatched reminders to all eligible residents! Sent: ${res.remindersSent}, Already Logged: ${res.alreadyRemindedCount}`);
+      if (res.metaApiConfigured) {
+        showSuccess(`Dispatched reminders to all eligible residents! Sent: ${res.remindersSent}, Already Logged: ${res.alreadyRemindedCount}`);
+      } else {
+        showWarning(
+          `Notice: Meta WhatsApp Cloud API credentials are not set in application.properties. All ${res.totalEligibleStudents} reminders are ready in queue below. Click "Send WhatsApp" or "Open Next Pending" to dispatch via WhatsApp Web!`
+        );
+      }
       if (res.reminders && res.reminders.length > 0) {
         setRemindersList(res.reminders);
       }
       onRefresh?.();
     } catch (err: any) {
-      showError(err.response?.data?.message || 'Failed to dispatch skipped reminders');
+      showError(err.response?.data?.message || 'Failed to dispatch reminders');
     } finally {
       setIsDispatchingAll(false);
     }
@@ -183,6 +259,7 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
   const handleCopyMessage = (reminder: PaymentReminder) => {
     navigator.clipboard.writeText(reminder.message);
     setCopiedId(reminder.studentId);
+
     showSuccess(`Personalized fee message for ${reminder.studentName} copied!`);
     setTimeout(() => setCopiedId(null), 2500);
   };
@@ -275,6 +352,29 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
         </IconButton>
       </DialogTitle>
 
+      {/* Alert banner when Meta API is not yet configured */}
+      {isMetaApiConfigured === false && (
+        <Alert
+          severity="warning"
+          variant="filled"
+          sx={{
+            borderRadius: 0,
+            bgcolor: '#b45309',
+            color: '#ffffff',
+            py: 1,
+            px: 3,
+            '& .MuiAlert-icon': { color: '#ffffff' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
+            ⚡ Meta WhatsApp Cloud API credentials are not yet configured in application.properties.
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', color: '#fef3c7', mt: 0.25 }}>
+            Automated background dispatch is running in WhatsApp Web mode. Click <strong>"Open Next Pending"</strong> or <strong>"Send WhatsApp"</strong> on each resident to open their pre-filled chat, or use <strong>"Mark All Sent"</strong> if you broadcasted messages.
+          </Typography>
+        </Alert>
+      )}
+
       {/* Progress & Quick Action Bar */}
       <Box sx={{ bgcolor: '#f0fdf4', borderBottom: '1px solid #bbf7d0', px: 3, py: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
@@ -307,7 +407,28 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
                 '&:hover': { bgcolor: '#047857' },
               }}
             >
-              {isDispatchingAll ? 'Dispatching All...' : 'Send to All (Include Skipped)'}
+              {isDispatchingAll ? 'Dispatching All...' : 'Send to All (Meta API)'}
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              color="primary"
+              startIcon={<PlayArrowIcon />}
+              onClick={handleOpenNextPending}
+              sx={{ textTransform: 'none', fontWeight: 700 }}
+            >
+              Open Next Pending
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              color="success"
+              startIcon={<DoneAllIcon />}
+              disabled={isDispatchingAll}
+              onClick={handleMarkAllAsSent}
+              sx={{ textTransform: 'none', fontWeight: 700 }}
+            >
+              Mark All Sent
             </Button>
             <Button
               variant="outlined"
@@ -341,6 +462,7 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
           }}
         />
       </Box>
+
 
       {/* Filter Tabs & Search */}
       <Box sx={{ px: 3, pt: 2, pb: 1, bgcolor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>

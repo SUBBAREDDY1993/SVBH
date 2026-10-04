@@ -19,6 +19,9 @@ public class ReminderBatchResultDto {
     private int totalEligibleStudents;
     private int remindersSent;
     private int alreadyRemindedCount;
+    private int pendingCount;
+    private boolean metaApiConfigured;
     private String message;
     private List<PaymentReminderDto> reminders;
 }
+

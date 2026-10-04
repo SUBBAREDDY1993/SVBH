@@ -99,8 +99,18 @@ public class PaymentReminderController {
     public ResponseEntity<ApiResponse<ReminderBatchResultDto>> sendSkippedReminders(
             @RequestParam(defaultValue = "ALL") String slot) {
         ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, true, true);
-        return ResponseEntity.ok(ApiResponse.success(result, "Dispatched reminders to all eligible residents including skipped/manual records."));
+        return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
     }
+
+    @PostMapping("/mark-all-sent")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Mark all eligible pending reminders as sent via WhatsApp Web/Broadcast")
+    public ResponseEntity<ApiResponse<ReminderBatchResultDto>> markAllAsSent(
+            @RequestParam(defaultValue = "ALL") String slot) {
+        ReminderBatchResultDto result = reminderService.markAllAsSentViaWhatsAppWeb(slot);
+        return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
+    }
+
 
     @PostMapping("/reset-today")
     @PreAuthorize("hasRole('ADMIN')")

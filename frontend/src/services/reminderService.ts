@@ -46,6 +46,12 @@ export const reminderService = {
     return response.data.data!;
   },
 
+  async markAllAsSent(slot = 'ALL'): Promise<ReminderBatchResult> {
+    const response = await api.post<ApiResponse<ReminderBatchResult>>(`/reminders/mark-all-sent?slot=${slot}`);
+    return response.data.data!;
+  },
+
+
   async syncMonthlyDues(): Promise<number> {
     const response = await api.post<ApiResponse<number>>('/students/sync-monthly-dues');
     return response.data.data || 0;

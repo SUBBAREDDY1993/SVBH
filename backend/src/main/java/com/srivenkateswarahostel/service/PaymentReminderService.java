@@ -175,12 +175,23 @@ public class PaymentReminderService {
             }
         }
 
-        auditService.log("FEE_REMINDER", "BATCH", slot,
-                String.format("Batch %s: %d sent, %d failed, %d previously sent out of %d eligible",
-                        slot, remindersSent, failedCount, alreadyRemindedCount, eligibleStudents.size()));
+        boolean isWaConfigured = whatsAppService.isConfigured();
+        int pendingCount = (int) processedReminders.stream()
+                .filter(r -> ReminderStatus.PENDING.name().equalsIgnoreCase(r.getStatus()))
+                .count();
 
-        String messageResult = String.format("Prepared %s reminders: %d sent successfully, %d failed, %d already delivered for today.",
-                slot, remindersSent, failedCount, alreadyRemindedCount);
+        auditService.log("FEE_REMINDER", "BATCH", slot,
+                String.format("Batch %s: %d sent, %d failed, %d pending, %d previously sent out of %d eligible",
+                        slot, remindersSent, failedCount, pendingCount, alreadyRemindedCount, eligibleStudents.size()));
+
+        String messageResult;
+        if (!isWaConfigured) {
+            messageResult = String.format("Meta WhatsApp Cloud API credentials not configured in application.properties. %d reminders prepared in queue for WhatsApp Web dispatch.",
+                    pendingCount > 0 ? pendingCount : eligibleStudents.size());
+        } else {
+            messageResult = String.format("Prepared %s reminders: %d sent successfully via Meta Cloud API, %d failed, %d already delivered for today.",
+                    slot, remindersSent, failedCount, alreadyRemindedCount);
+        }
 
         return ReminderBatchResultDto.builder()
                 .slot(slot)
@@ -188,10 +199,13 @@ public class PaymentReminderService {
                 .totalEligibleStudents(eligibleStudents.size())
                 .remindersSent(remindersSent)
                 .alreadyRemindedCount(alreadyRemindedCount)
+                .pendingCount(pendingCount)
+                .metaApiConfigured(isWaConfigured)
                 .message(messageResult)
                 .reminders(processedReminders)
                 .build();
     }
+
 
     /**
      * Dispatch WhatsApp reminder for a specific student via Meta WhatsApp Cloud API.
@@ -693,8 +707,52 @@ public class PaymentReminderService {
                 .overdue(overdueCount)
                 .paid(paidCount)
                 .totalActive(activeStudents.size())
+                .whatsAppConfigured(whatsAppService.isConfigured())
+                .whatsAppProvider(whatsAppService.isConfigured() ? "META_CLOUD_API" : "WHATSAPP_WEB")
                 .build();
     }
+
+    /**
+     * Mark all pending eligible reminders as sent via WhatsApp Web or manual broadcast.
+     */
+    @Transactional
+    public ReminderBatchResultDto markAllAsSentViaWhatsAppWeb(String slot) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        LocalDate maxDueDate = today.plusDays(7);
+
+        List<Student> eligibleStudents = studentRepository.findAll().stream()
+                .filter(s -> s.getStatus() != StudentStatus.VACATED)
+                .filter(s -> !"PAID".equalsIgnoreCase(s.getPaymentStatus()))
+                .filter(s -> {
+                    if (s.getNextPaymentDueDate() == null) return true;
+                    return !s.getNextPaymentDueDate().isAfter(maxDueDate);
+                })
+                .collect(Collectors.toList());
+
+        List<PaymentReminderDto> updatedReminders = new ArrayList<>();
+        int markedCount = 0;
+
+        for (Student student : eligibleStudents) {
+            PaymentReminderDto dto = recordManualReminder(student.getStudentId(), "WHATSAPP_WEB", null);
+            updatedReminders.add(dto);
+            markedCount++;
+        }
+
+        auditService.log("FEE_REMINDER", "MARK_ALL_SENT", slot,
+                String.format("Marked %d fee reminders as Sent (WhatsApp Web) for slot %s", markedCount, slot));
+
+        return ReminderBatchResultDto.builder()
+                .slot(slot)
+                .date(today)
+                .totalEligibleStudents(eligibleStudents.size())
+                .remindersSent(markedCount)
+                .pendingCount(0)
+                .metaApiConfigured(whatsAppService.isConfigured())
+                .message(String.format("Successfully recorded %d reminders as Sent via WhatsApp Web.", markedCount))
+                .reminders(updatedReminders)
+                .build();
+    }
+
 
     /**
      * Generate personalized reminder message incorporating dynamic month (e.g. October 2026).
