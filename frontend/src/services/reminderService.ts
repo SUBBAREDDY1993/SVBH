@@ -1,5 +1,5 @@
 import api from './api';
-import { AdminDueAlert, ApiResponse, FeeReminder, PaymentReminder, ReminderBatchResult, ReminderCounts } from '../types';
+import { AdminDueAlert, ApiResponse, FeeReminder, IncomingReplyResponse, PaymentReminder, ReminderBatchResult, ReminderCounts } from '../types';
 
 export const reminderService = {
   async getActiveReminders(): Promise<FeeReminder[]> {
@@ -22,11 +22,33 @@ export const reminderService = {
     return response.data.data || [];
   },
 
-  async triggerBatch(slot: 'MORNING' | 'EVENING' | 'NIGHT', force = false): Promise<ReminderBatchResult> {
-    const response = await api.post<ApiResponse<ReminderBatchResult>>(
-      `/reminders/trigger?slot=${slot}&force=${force}`
+  async sendStudentReminder(studentId: string, slot = 'MANUAL', force = false): Promise<PaymentReminder> {
+    const response = await api.post<ApiResponse<PaymentReminder>>(
+      `/reminders/${studentId}/send?slot=${slot}&force=${force}`
     );
     return response.data.data!;
+  },
+
+  async retryStudentReminder(studentId: string): Promise<PaymentReminder> {
+    const response = await api.post<ApiResponse<PaymentReminder>>(`/reminders/${studentId}/retry`);
+    return response.data.data!;
+  },
+
+  async triggerBatch(slot: 'MORNING' | 'EVENING' | 'NIGHT' | 'ALL', force = false, includeSkipped = false): Promise<ReminderBatchResult> {
+    const response = await api.post<ApiResponse<ReminderBatchResult>>(
+      `/reminders/trigger?slot=${slot}&force=${force}&includeSkipped=${includeSkipped}`
+    );
+    return response.data.data!;
+  },
+
+  async sendSkippedReminders(slot = 'ALL'): Promise<ReminderBatchResult> {
+    const response = await api.post<ApiResponse<ReminderBatchResult>>(`/reminders/send-skipped?slot=${slot}`);
+    return response.data.data!;
+  },
+
+  async syncMonthlyDues(): Promise<number> {
+    const response = await api.post<ApiResponse<number>>('/students/sync-monthly-dues');
+    return response.data.data || 0;
   },
 
   async resetToday(slot?: string): Promise<void> {
@@ -50,6 +72,22 @@ export const reminderService = {
     return response.data.data!;
   },
 
+  async simulateIncomingReply(data: {
+    studentId?: string;
+    mobileNumber: string;
+    messageText: string;
+    senderName?: string;
+    channel?: string;
+  }): Promise<IncomingReplyResponse> {
+    const response = await api.post<ApiResponse<IncomingReplyResponse>>('/reminders/reply', data);
+    return response.data.data!;
+  },
+
+  async getIncomingReplies(): Promise<PaymentReminder[]> {
+    const response = await api.get<ApiResponse<PaymentReminder[]>>('/reminders/replies');
+    return response.data.data || [];
+  },
+
   async getAdminDueAlert(): Promise<AdminDueAlert> {
     const response = await api.get<ApiResponse<AdminDueAlert>>('/reminders/admin-alert');
     return response.data.data!;
@@ -60,4 +98,3 @@ export const reminderService = {
     return response.data.data!;
   },
 };
-

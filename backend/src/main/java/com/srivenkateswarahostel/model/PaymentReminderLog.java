@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -41,7 +42,13 @@ public class PaymentReminderLog {
 
     private long daysUntilDue;
 
-    private String reminderSlot; // "MORNING", "EVENING", "MANUAL"
+    private String billingMonth; // e.g. "October 2026"
+
+    private String feeId;
+
+    private String reminderType; // "DUE_DATE", "OVERDUE", "UPCOMING", "MANUAL"
+
+    private String reminderSlot; // "MORNING", "EVENING", "NIGHT", "MANUAL"
 
     @Indexed
     private LocalDate reminderDate;
@@ -50,10 +57,37 @@ public class PaymentReminderLog {
     @Indexed
     private LocalDateTime sentAt;
 
-    private String channel; // "WHATSAPP", "SMS", "SYSTEM_BATCH", "CALL"
+    private LocalDateTime lastAttemptAt;
+
+    private LocalDateTime deliveredAt;
+
+    private LocalDateTime readAt;
+
+    @Indexed
+    private String whatsappMessageId; // Meta wamid
+
+    private String lastError;
+
+    private String apiResponse;
+
+    @Builder.Default
+    private int attemptCount = 0;
+
+    private String channel; // "WHATSAPP_CLOUD_API", "WHATSAPP", "SMS", "EMAIL"
 
     private String message;
 
     @Builder.Default
-    private String status = "SENT"; // "SENT", "LOGGED", "FAILED"
+    private String status = "PENDING"; // PENDING, PROCESSING, SENT, FAILED, SKIPPED, DELIVERED, READ
+
+    private String replyText;
+
+    private LocalDateTime replyReceivedAt;
+
+    private String autoReplyText;
+
+    private LocalDateTime autoReplySentAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

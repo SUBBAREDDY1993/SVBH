@@ -91,4 +91,13 @@ public class StudentController {
         StudentResponseDto updated = studentService.updatePaymentStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success(updated, "Payment status updated successfully"));
     }
+
+    @PostMapping("/sync-monthly-dues")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Synchronize live recurring monthly fee due dates for all active students based on joining date")
+    public ResponseEntity<ApiResponse<Integer>> syncMonthlyDues() {
+        int updated = studentService.syncLiveMonthlyDueDates();
+        return ResponseEntity.ok(ApiResponse.success(updated, "Successfully synchronized live monthly fee due dates for " + updated + " student(s)"));
+    }
 }
+

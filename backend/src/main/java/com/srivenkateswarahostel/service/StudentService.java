@@ -14,6 +14,10 @@ import com.srivenkateswarahostel.repository.BedRepository;
 import com.srivenkateswarahostel.repository.RoomRepository;
 import com.srivenkateswarahostel.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -21,12 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StudentService {
 
     private final StudentRepository studentRepository;
@@ -194,6 +200,11 @@ public class StudentService {
     }
 
     public List<StudentResponseDto> getAllStudents(StudentStatus status, String search) {
+        try {
+            syncLiveMonthlyDueDates();
+        } catch (Exception e) {
+            log.warn("Could not sync live monthly dues during student fetch: {}", e.getMessage());
+        }
         List<Student> students;
         if (search != null && !search.isBlank()) {
             students = studentRepository.searchStudents(search.trim());
@@ -316,6 +327,79 @@ public class StudentService {
 
         studentRepository.delete(student);
         auditService.log("DELETE", "STUDENT", student.getStudentId(), "Permanently deleted resident: " + student.getFullName());
+    }
+
+    /**
+     * Synchronize recurring monthly fee due dates for all active students based on joining date
+     * and paymentDueDay.
+     * Ensures that as calendar months elapse, active residents' dues roll over live to the current
+     * month (e.g. October 2026) instead of remaining frozen in past admission months.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Scheduled(cron = "0 5 0 * * *")
+    @Transactional
+    public int syncLiveMonthlyDueDates() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        List<Student> students = studentRepository.findAll();
+        int updatedCount = 0;
+
+        for (Student student : students) {
+            if (student.getStatus() == StudentStatus.VACATED) {
+                continue;
+            }
+
+            int dueDay = student.getPaymentDueDay();
+            if (dueDay <= 0 || dueDay > 28) {
+                if (student.getJoiningDate() != null) {
+                    dueDay = Math.min(student.getJoiningDate().getDayOfMonth(), 28);
+                } else {
+                    dueDay = 5;
+                }
+                student.setPaymentDueDay(dueDay);
+            }
+
+            LocalDate joinDate = student.getJoiningDate() != null ? student.getJoiningDate() : today;
+            boolean joinedThisMonth = (joinDate.getYear() == currentYear && joinDate.getMonthValue() == currentMonth);
+
+            boolean isPaid = "PAID".equalsIgnoreCase(student.getPaymentStatus());
+            LocalDate lastPay = student.getLastPaymentDate();
+            boolean paidForCurrentMonth = isPaid && lastPay != null &&
+                    (lastPay.getYear() == currentYear && lastPay.getMonthValue() == currentMonth);
+
+            LocalDate targetDueDate;
+
+            if (paidForCurrentMonth) {
+                // Already paid for current month, next due in following month
+                targetDueDate = LocalDate.of(currentYear, currentMonth, 1).plusMonths(1).withDayOfMonth(dueDay);
+            } else if (joinedThisMonth) {
+                // Joined this month, initial admission fee covers this month, next due next month
+                targetDueDate = LocalDate.of(currentYear, currentMonth, 1).plusMonths(1).withDayOfMonth(dueDay);
+            } else {
+                // Unpaid for current month, due date is in the CURRENT active month!
+                targetDueDate = LocalDate.of(currentYear, currentMonth, dueDay);
+
+                // If previously marked PAID in an old month, reset to PENDING for the new month
+                if (isPaid && !paidForCurrentMonth) {
+                    student.setPaymentStatus("PENDING");
+                }
+            }
+
+            if (student.getNextPaymentDueDate() == null || !student.getNextPaymentDueDate().isEqual(targetDueDate)) {
+                student.setNextPaymentDueDate(targetDueDate);
+                student.setUpdatedAt(LocalDateTime.now());
+                studentRepository.save(student);
+                updatedCount++;
+            }
+        }
+
+        if (updatedCount > 0) {
+            log.info("Synchronized live monthly fee due dates for {} student(s) to current month ({}-{})",
+                    updatedCount, currentYear, currentMonth);
+        }
+        return updatedCount;
     }
 
     @Transactional

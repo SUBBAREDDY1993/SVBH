@@ -7,7 +7,7 @@ $RootPath = $PSScriptRoot
 
 # 1. Start Backend in a dedicated PowerShell window
 Write-Host "[1/2] Launching Backend (Spring Boot on port 8081)..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$RootPath\backend'; Write-Host '>>> SVBH Backend Server (Port 8081) <<<' -ForegroundColor Cyan; mvn spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$RootPath\backend'; Write-Host '>>> SVBH Backend Server (Port 8081) <<<' -ForegroundColor Cyan; powershell -ExecutionPolicy Bypass -File .\mvn.ps1 spring-boot:run"
 
 # Wait a brief moment for backend to initialize
 Start-Sleep -Seconds 3

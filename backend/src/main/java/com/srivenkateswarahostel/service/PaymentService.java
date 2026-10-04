@@ -30,6 +30,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
+    private final StudentService studentService;
     private final AuditService auditService;
 
     @Transactional
@@ -83,6 +84,14 @@ public class PaymentService {
                 newDue = newDue.withDayOfMonth(student.getPaymentDueDay());
             }
             student.setNextPaymentDueDate(newDue);
+
+            double rentAmount = student.getMonthlyRent() != null ? student.getMonthlyRent() : 0.0;
+            if (savedPayment.getAmount() >= rentAmount) {
+                student.setPaymentStatus("PAID");
+            } else {
+                student.setPaymentStatus("HALF_PAID");
+            }
+
             student.setUpdatedAt(LocalDateTime.now());
             studentRepository.save(student);
         }
@@ -117,6 +126,10 @@ public class PaymentService {
     }
 
     public List<PaymentDueDto> getOverduePayments() {
+        try {
+            studentService.syncLiveMonthlyDueDates();
+        } catch (Exception ignored) {}
+
         LocalDate today = LocalDate.now();
         List<Student> overdueStudents = studentRepository.findOverdueStudents(today);
         if (overdueStudents == null || overdueStudents.isEmpty()) {
@@ -155,6 +168,10 @@ public class PaymentService {
     }
 
     public List<PaymentDueDto> getDueSoonPayments() {
+        try {
+            studentService.syncLiveMonthlyDueDates();
+        } catch (Exception ignored) {}
+
         LocalDate today = LocalDate.now();
         LocalDate sevenDaysAhead = today.plusDays(7);
         return studentRepository.findAll().stream()
@@ -188,6 +205,10 @@ public class PaymentService {
     }
 
     public List<PaymentDueDto> getDueTodayPayments() {
+        try {
+            studentService.syncLiveMonthlyDueDates();
+        } catch (Exception ignored) {}
+
         LocalDate today = LocalDate.now();
         return studentRepository.findAll().stream()
                 .filter(s -> s.getStatus() != StudentStatus.VACATED && s.getNextPaymentDueDate() != null)

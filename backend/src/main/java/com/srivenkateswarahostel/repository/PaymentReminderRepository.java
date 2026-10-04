@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PaymentReminderRepository extends MongoRepository<PaymentReminderLog, String> {
@@ -22,5 +23,15 @@ public interface PaymentReminderRepository extends MongoRepository<PaymentRemind
 
     List<PaymentReminderLog> findByStudentIdOrderBySentAtDesc(String studentId);
 
+    Optional<PaymentReminderLog> findTopByStudentIdOrderBySentAtDesc(String studentId);
+
+    Optional<PaymentReminderLog> findByWhatsappMessageId(String whatsappMessageId);
+
+    List<PaymentReminderLog> findByStudentIdAndReminderDate(String studentId, LocalDate reminderDate);
+
+    List<PaymentReminderLog> findByStatus(String status);
+
     List<PaymentReminderLog> findTop50ByOrderBySentAtDesc();
+
+    List<PaymentReminderLog> findByReplyTextIsNotNullOrderByReplyReceivedAtDesc();
 }

@@ -54,14 +54,52 @@ public class PaymentReminderController {
         return ResponseEntity.ok(ApiResponse.success(reminders));
     }
 
+    @PostMapping("/{studentId}/send")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Send fee payment reminder to student via Meta WhatsApp Cloud API")
+    public ResponseEntity<ApiResponse<PaymentReminderDto>> sendStudentReminder(
+            @PathVariable String studentId,
+            @RequestParam(defaultValue = "MANUAL") String slot,
+            @RequestParam(defaultValue = "false") boolean force) {
+        PaymentReminderDto result = reminderService.dispatchWhatsAppReminder(studentId, slot, force);
+        String msg = "SENT".equalsIgnoreCase(result.getStatus())
+                ? "WhatsApp fee reminder sent successfully to " + result.getStudentName()
+                : "PENDING".equalsIgnoreCase(result.getStatus())
+                ? "Prepared reminder. Open WhatsApp Web/App to dispatch."
+                : "Failed to dispatch WhatsApp reminder: " + (result.getLastError() != null ? result.getLastError() : "Unknown error");
+        return ResponseEntity.ok(ApiResponse.success(result, msg));
+    }
+
+    @PostMapping("/{studentId}/retry")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Retry sending a previously failed fee reminder")
+    public ResponseEntity<ApiResponse<PaymentReminderDto>> retryStudentReminder(
+            @PathVariable String studentId) {
+        PaymentReminderDto result = reminderService.retryReminder(studentId);
+        String msg = "SENT".equalsIgnoreCase(result.getStatus())
+                ? "WhatsApp fee reminder retry succeeded for " + result.getStudentName()
+                : "Retry failed: " + (result.getLastError() != null ? result.getLastError() : "Unknown error");
+        return ResponseEntity.ok(ApiResponse.success(result, msg));
+    }
+
     @PostMapping("/trigger")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Manually trigger morning or evening scheduled reminder batch")
+    @Operation(summary = "Manually trigger scheduled reminder batch (supports force and includeSkipped)")
     public ResponseEntity<ApiResponse<ReminderBatchResultDto>> triggerBatch(
             @RequestParam(defaultValue = "MORNING") String slot,
-            @RequestParam(defaultValue = "false") boolean force) {
-        ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, force);
+            @RequestParam(defaultValue = "false") boolean force,
+            @RequestParam(defaultValue = "false") boolean includeSkipped) {
+        ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, force, includeSkipped);
         return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
+    }
+
+    @PostMapping("/send-skipped")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Send reminders to all residents including those previously skipped or manually sent")
+    public ResponseEntity<ApiResponse<ReminderBatchResultDto>> sendSkippedReminders(
+            @RequestParam(defaultValue = "ALL") String slot) {
+        ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, true, true);
+        return ResponseEntity.ok(ApiResponse.success(result, "Dispatched reminders to all eligible residents including skipped/manual records."));
     }
 
     @PostMapping("/reset-today")
@@ -81,6 +119,23 @@ public class PaymentReminderController {
             @RequestParam(required = false) String customMessage) {
         PaymentReminderDto reminder = reminderService.recordManualReminder(studentId, channel, customMessage);
         return ResponseEntity.ok(ApiResponse.success(reminder, "Reminder logged successfully"));
+    }
+
+    @PostMapping("/reply")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Simulate or record an incoming resident reply and trigger automated reply")
+    public ResponseEntity<ApiResponse<IncomingReplyResponseDto>> handleIncomingReply(
+            @RequestBody IncomingReplyRequestDto request) {
+        IncomingReplyResponseDto response = reminderService.handleIncomingReply(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Incoming message logged and auto-reply processed"));
+    }
+
+    @GetMapping("/replies")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "Get list of recent incoming resident replies and auto-replies")
+    public ResponseEntity<ApiResponse<List<PaymentReminderDto>>> getIncomingReplies() {
+        List<PaymentReminderDto> replies = reminderService.getIncomingReplies();
+        return ResponseEntity.ok(ApiResponse.success(replies));
     }
 
     @GetMapping("/admin-alert")

@@ -46,7 +46,11 @@ export const Login: React.FC = () => {
       showSuccess(`Welcome back, ${auth.fullName}!`);
       navigate('/dashboard');
     } catch (err: any) {
-      showError(err.response?.data?.message || 'Invalid username or password');
+      if (!err.response) {
+        showError('Cannot connect to backend server. Make sure the Spring Boot backend is running on port 8081.');
+      } else {
+        showError(err.response?.data?.message || 'Invalid username or password');
+      }
     } finally {
       setIsLoading(false);
     }

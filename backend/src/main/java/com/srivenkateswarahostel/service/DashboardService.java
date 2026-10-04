@@ -5,7 +5,6 @@ import com.srivenkateswarahostel.dto.PaymentDueDto;
 import com.srivenkateswarahostel.dto.PaymentResponseDto;
 import com.srivenkateswarahostel.dto.StudentResponseDto;
 import com.srivenkateswarahostel.model.BedStatus;
-import com.srivenkateswarahostel.model.Payment;
 import com.srivenkateswarahostel.model.Student;
 import com.srivenkateswarahostel.model.StudentStatus;
 import com.srivenkateswarahostel.repository.BedRepository;

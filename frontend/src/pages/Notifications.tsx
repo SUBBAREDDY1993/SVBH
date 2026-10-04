@@ -18,10 +18,15 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EmailIcon from '@mui/icons-material/Email';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SendIcon from '@mui/icons-material/Send';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
+import TextField from '@mui/material/TextField';
 import { dashboardService } from '../services/dashboardService';
 import { reminderService } from '../services/reminderService';
-import { AdminDueAlert, DashboardStats, FeeReminder } from '../types';
+import { AdminDueAlert, DashboardStats, FeeReminder, PaymentReminder } from '../types';
 import { useNotification } from '../context/NotificationContext';
 
 export const Notifications: React.FC = () => {
@@ -30,24 +35,86 @@ export const Notifications: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [adminAlert, setAdminAlert] = useState<AdminDueAlert | null>(null);
   const [feeReminders, setFeeReminders] = useState<FeeReminder[]>([]);
+  const [incomingReplies, setIncomingReplies] = useState<PaymentReminder[]>([]);
   const [isSendingAlert, setIsSendingAlert] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [sendingStudentId, setSendingStudentId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Simulation form state
+  const [testSimPhone, setTestSimPhone] = useState('9876543210');
+  const [testSimMsg, setTestSimMsg] = useState('I have paid 5000 via Google Pay');
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const fetchAll = async () => {
     try {
       setIsLoading(true);
-      const [statsData, alertData, remData] = await Promise.all([
+      const [statsData, alertData, remData, repliesData] = await Promise.all([
         dashboardService.getStats(),
         reminderService.getAdminDueAlert().catch(() => null),
         reminderService.getActiveReminders().catch(() => []),
+        reminderService.getIncomingReplies().catch(() => []),
       ]);
       setStats(statsData);
       setAdminAlert(alertData);
       setFeeReminders(remData);
+      setIncomingReplies(repliesData);
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSyncMonthlyDues = async () => {
+    try {
+      setIsSyncing(true);
+      const count = await reminderService.syncMonthlyDues();
+      showSuccess(`Synchronized live monthly fee due dates! Updated ${count} resident records.`);
+      await fetchAll();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to sync monthly due dates');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSendLiveWhatsApp = async (studentId: string, studentName: string) => {
+    try {
+      setSendingStudentId(studentId);
+      const res = await reminderService.sendStudentReminder(studentId, 'MANUAL', true);
+      if (res.status === 'SENT') {
+        showSuccess(`WhatsApp fee reminder sent to ${studentName}! (ID: ${res.whatsappMessageId || 'Confirmed'})`);
+      } else if (res.status === 'FAILED') {
+        showError(`Failed to send WhatsApp reminder to ${studentName}: ${res.lastError || 'API rejected'}`);
+      } else {
+        showSuccess(`WhatsApp reminder prepared for ${studentName}`);
+      }
+      await fetchAll();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to send WhatsApp reminder');
+    } finally {
+      setSendingStudentId(null);
+    }
+  };
+
+  const handleSimulateReply = async () => {
+    if (!testSimPhone.trim() || !testSimMsg.trim()) {
+      showError('Please enter a phone number and message');
+      return;
+    }
+    try {
+      setIsSimulating(true);
+      const res = await reminderService.simulateIncomingReply({
+        mobileNumber: testSimPhone.trim(),
+        messageText: testSimMsg.trim(),
+      });
+      showSuccess(`Simulated reply processed! Auto-reply sent to ${res.studentName}`);
+      await fetchAll();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Failed to simulate incoming reply');
+    } finally {
+      setIsSimulating(false);
     }
   };
 
@@ -218,14 +285,26 @@ export const Notifications: React.FC = () => {
                 Automated student fee due notices, countdowns, and direct WhatsApp reminders
               </Typography>
             </Box>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => navigate('/payments/due')}
-              sx={{ textTransform: 'none', fontWeight: 700 }}
-            >
-              Open Due Matrix
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={isSyncing ? <CircularProgress size={16} /> : <RefreshIcon />}
+                disabled={isSyncing}
+                onClick={handleSyncMonthlyDues}
+                sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#059669', color: '#059669' }}
+              >
+                {isSyncing ? 'Syncing...' : 'Sync Live Due Dates'}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate('/payments/due')}
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              >
+                Open Due Matrix
+              </Button>
+            </Box>
           </Box>
 
           {feeReminders.length === 0 ? (
@@ -244,6 +323,7 @@ export const Notifications: React.FC = () => {
                 const isOverdue = rem.daysRemaining < 0;
                 const isToday = rem.daysRemaining === 0;
                 const isTomorrow = rem.daysRemaining === 1;
+                const isSending = sendingStudentId === rem.studentId;
 
                 const borderColor = isOverdue ? '#ef4444' : isToday ? '#f59e0b' : isTomorrow ? '#f97316' : '#3b82f6';
                 const bgTint = isOverdue ? '#fef2f2' : isToday ? '#fffbeb' : '#f8fafc';
@@ -298,17 +378,33 @@ export const Notifications: React.FC = () => {
                           mt: 0.25,
                         }}
                       >
-                        ⚠ {isOverdue
+                        ⚠ {rem.message || (isOverdue
                           ? `Payment overdue by ${Math.abs(rem.daysRemaining)} day${Math.abs(rem.daysRemaining) === 1 ? '' : 's'}`
                           : isToday
                           ? 'Payment due today'
                           : isTomorrow
                           ? 'Payment due tomorrow'
-                          : `Payment due in ${rem.daysRemaining} days`}
+                          : `Payment due in ${rem.daysRemaining} days`)}
                       </Typography>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        disabled={isSending}
+                        startIcon={isSending ? <CircularProgress size={14} color="inherit" /> : <SendIcon />}
+                        onClick={() => handleSendLiveWhatsApp(rem.studentId, rem.studentName)}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          bgcolor: '#16a34a',
+                          '&:hover': { bgcolor: '#15803d' },
+                        }}
+                      >
+                        {isSending ? 'Sending...' : 'Send WhatsApp'}
+                      </Button>
+
                       {rem.whatsappUrl && (
                         <Button
                           variant="outlined"
@@ -324,11 +420,11 @@ export const Notifications: React.FC = () => {
                             '&:hover': { bgcolor: '#f0fdf4', borderColor: '#16a34a' },
                           }}
                         >
-                          WhatsApp
+                          Web/App
                         </Button>
                       )}
                       <Button
-                        variant="contained"
+                        variant="outlined"
                         size="small"
                         onClick={() => navigate('/payments')}
                         sx={{ textTransform: 'none', fontWeight: 700 }}
@@ -339,6 +435,91 @@ export const Notifications: React.FC = () => {
                   </Paper>
                 );
               })}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Automated Resident Replies & Auto-Reply Simulator */}
+      <Card sx={{ mb: 3, borderRadius: 3, borderLeft: '6px solid #10b981', bgcolor: '#ffffff', border: '1px solid #cbd5e1' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <SmartToyIcon sx={{ color: '#059669', fontSize: 28 }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                  Automated Resident Reply & Auto-Response
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  When students reply to fee reminder notices, the system automatically dispatches an intelligent confirmation & receipt acknowledgment.
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Quick Simulation Box */}
+          <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#065f46', mb: 1 }}>
+              Test / Simulate Incoming Resident Message
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <TextField
+                size="small"
+                label="Student Phone Number"
+                value={testSimPhone}
+                onChange={(e) => setTestSimPhone(e.target.value)}
+                sx={{ width: { xs: '100%', sm: 200 } }}
+              />
+              <TextField
+                size="small"
+                label="Resident Reply Text"
+                value={testSimMsg}
+                onChange={(e) => setTestSimMsg(e.target.value)}
+                sx={{ flex: 1, minWidth: { xs: '100%', sm: 280 } }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                disabled={isSimulating}
+                onClick={handleSimulateReply}
+                sx={{ bgcolor: '#059669', fontWeight: 700, textTransform: 'none', '&:hover': { bgcolor: '#047857' } }}
+              >
+                {isSimulating ? 'Processing...' : 'Simulate Auto-Reply'}
+              </Button>
+            </Box>
+          </Paper>
+
+          {/* Recent Replies List */}
+          {incomingReplies.length > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
+                Recent Incoming Replies & Dispatched Auto-Replies ({incomingReplies.length})
+              </Typography>
+              {incomingReplies.slice(0, 3).map((rep) => (
+                <Paper key={rep.id} elevation={0} sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                      {rep.studentName} (Room {rep.roomNumber})
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                      {rep.replyReceivedAt ? new Date(rep.replyReceivedAt).toLocaleTimeString() : 'Recent'}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: '#334155', fontStyle: 'italic', mt: 0.5 }}>
+                    "{rep.replyText}"
+                  </Typography>
+                  {rep.autoReplyText && (
+                    <Box sx={{ mt: 1, p: 1, borderRadius: 1.5, bgcolor: '#ecfdf5', border: '1px solid #a7f3d0' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#047857', display: 'block' }}>
+                        🤖 Automated Response Sent:
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#065f46', whiteSpace: 'pre-line' }}>
+                        {rep.autoReplyText}
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
+              ))}
             </Box>
           )}
         </CardContent>

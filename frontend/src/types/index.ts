@@ -377,13 +377,39 @@ export interface PaymentReminder {
   amountDue: number;
   nextPaymentDueDate: string;
   daysUntilDue: number;
+  billingMonth?: string;
   reminderSlot: 'MORNING' | 'EVENING' | 'NIGHT' | 'MANUAL';
   reminderDate: string;
   sentAt: string;
+  lastAttemptAt?: string;
+  deliveredAt?: string;
+  readAt?: string;
+  whatsappMessageId?: string;
+  lastError?: string;
+  apiResponse?: string;
+  attemptCount?: number;
   channel: string;
   message: string;
-  status: string;
+  status: 'PENDING' | 'PROCESSING' | 'SENT' | 'FAILED' | 'SKIPPED' | 'DELIVERED' | 'READ' | string;
   whatsappUrl?: string;
+  replyText?: string;
+  replyReceivedAt?: string;
+  autoReplyText?: string;
+  autoReplySentAt?: string;
+}
+
+export interface IncomingReplyResponse {
+  studentId: string;
+  studentName: string;
+  mobileNumber: string;
+  roomNumber: string;
+  bedId: string;
+  incomingMessage: string;
+  autoReplyMessage: string;
+  whatsappReplyUrl?: string;
+  channel: string;
+  receivedAt: string;
+  status: string;
 }
 
 export interface ReminderBatchResult {

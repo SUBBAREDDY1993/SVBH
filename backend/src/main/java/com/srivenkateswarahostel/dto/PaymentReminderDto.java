@@ -23,11 +23,23 @@ public class PaymentReminderDto {
     private Double amountDue;
     private LocalDate nextPaymentDueDate;
     private long daysUntilDue;
+    private String billingMonth;
     private String reminderSlot;
     private LocalDate reminderDate;
     private LocalDateTime sentAt;
+    private LocalDateTime lastAttemptAt;
+    private LocalDateTime deliveredAt;
+    private LocalDateTime readAt;
+    private String whatsappMessageId;
+    private String lastError;
+    private String apiResponse;
+    private int attemptCount;
     private String channel;
     private String message;
-    private String status;
+    private String status; // PENDING, PROCESSING, SENT, FAILED, SKIPPED, DELIVERED, READ
     private String whatsappUrl;
+    private String replyText;
+    private LocalDateTime replyReceivedAt;
+    private String autoReplyText;
+    private LocalDateTime autoReplySentAt;
 }

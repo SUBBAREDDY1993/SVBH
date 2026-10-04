@@ -33,6 +33,7 @@ public class AdminPaymentAlertService {
 
     private final StudentRepository studentRepository;
     private final PaymentReminderRepository reminderRepository;
+    private final StudentService studentService;
     private final AuditService auditService;
     private final EmailService emailService;
 
@@ -104,6 +105,12 @@ public class AdminPaymentAlertService {
     public AdminDueAlertDto generateAdminDueAlert(LocalDate today) {
         if (today == null) {
             today = LocalDate.now();
+        }
+
+        try {
+            studentService.syncLiveMonthlyDueDates();
+        } catch (Exception e) {
+            log.warn("Non-fatal: could not sync live monthly dues during admin alert: {}", e.getMessage());
         }
 
         LocalDate urgentStart = today.plusDays(1);
