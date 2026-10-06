@@ -209,8 +209,10 @@ export const Rooms: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
 
-  const floorNumbers = Array.from(new Set(rooms.map((r) => r.floor))).sort((a, b) => a - b);
-  const floorsToDisplay = floorNumbers.length > 0 ? floorNumbers : [1, 2, 3, 4, 5, 6];
+  const floorNumbers: number[] = Array.from(new Set(rooms.map((r) => r.floor)))
+    .filter((f): f is number => typeof f === 'number')
+    .sort((a, b) => a - b);
+  const floorsToDisplay: number[] = floorNumbers.length > 0 ? floorNumbers : [1, 2, 3, 4, 5, 6];
 
   const getFloorBedCount = (floorNum: number) => {
     return rooms
