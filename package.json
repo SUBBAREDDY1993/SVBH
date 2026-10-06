@@ -4,8 +4,8 @@
   "private": true,
   "description": "Sri Venkateswara Boys Hostel Management System",
   "scripts": {
-    "start": "serve -s frontend/dist",
-    "dev": "serve -s frontend/dist",
+    "start": "node start.js",
+    "dev": "node start.js",
     "dev:local": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
     "dev:backend": "powershell -ExecutionPolicy Bypass -File ./mvn.ps1 -f backend/pom.xml spring-boot:run",
     "dev:frontend": "npm run dev --prefix frontend",
