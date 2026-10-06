@@ -2,9 +2,8 @@ const { spawn } = require('child_process');
 
 if (process.platform === 'win32') {
   // On Windows: Launch local development environment (Spring Boot + Vite)
-  const child = spawn('powershell', ['-ExecutionPolicy', 'Bypass', '-File', './start-dev.ps1'], {
+  const child = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', './start-dev.ps1'], {
     stdio: 'inherit',
-    shell: true,
   });
   child.on('exit', (code) => process.exit(code || 0));
 } else {
