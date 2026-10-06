@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Students", description = "Student Admission & Management APIs")
 public class StudentController {
 
@@ -27,6 +29,7 @@ public class StudentController {
     public ResponseEntity<ApiResponse<List<StudentResponseDto>>> getAllStudents(
             @RequestParam(required = false) StudentStatus status,
             @RequestParam(required = false) String search) {
+        log.debug("REST: Fetching students with status filter='{}', search='{}'", status, search);
         List<StudentResponseDto> students = studentService.getAllStudents(status, search);
         return ResponseEntity.ok(ApiResponse.success(students));
     }
@@ -34,6 +37,7 @@ public class StudentController {
     @GetMapping("/{id}")
     @Operation(summary = "Get student profile by ID or Student ID")
     public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentById(@PathVariable String id) {
+        log.debug("REST: Fetching student profile for '{}'", id);
         StudentResponseDto student = studentService.getStudentById(id);
         return ResponseEntity.ok(ApiResponse.success(student));
     }
@@ -42,7 +46,10 @@ public class StudentController {
     @Operation(summary = "Admit new student and assign bed")
     public ResponseEntity<ApiResponse<StudentResponseDto>> admitStudent(
             @Valid @RequestBody StudentAdmissionRequest request) {
+        log.info("REST: Admitting student '{}' to bed '{}' (room: {})",
+                request.getFullName(), request.getBedId(), request.getRoomNumber());
         StudentResponseDto admitted = studentService.admitStudent(request);
+        log.info("REST: Student '{}' admitted successfully with assigned ID '{}'", admitted.getFullName(), admitted.getStudentId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(admitted, "Student admitted successfully. Bed allocated."));
     }
@@ -52,6 +59,7 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDto>> updateStudent(
             @PathVariable String id,
             @Valid @RequestBody StudentUpdateRequest request) {
+        log.info("REST: Updating student details for '{}'", id);
         StudentResponseDto updated = studentService.updateStudent(id, request);
         return ResponseEntity.ok(ApiResponse.success(updated, "Student updated successfully"));
     }
@@ -61,6 +69,7 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDto>> markNoticePeriod(
             @PathVariable String id,
             @Valid @RequestBody NoticePeriodRequest request) {
+        log.info("REST: Marking notice period for student '{}', vacate date: {}", id, request.getExpectedVacateDate());
         StudentResponseDto updated = studentService.markNoticePeriod(id, request);
         return ResponseEntity.ok(ApiResponse.success(updated, "Student placed on notice period"));
     }
@@ -70,7 +79,9 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDto>> vacateStudent(
             @PathVariable String id,
             @Valid @RequestBody VacateStudentRequest request) {
+        log.info("REST: Vacating student '{}'", id);
         StudentResponseDto vacated = studentService.vacateStudent(id, request);
+        log.info("REST: Student '{}' vacated. Bed '{}' released.", vacated.getFullName(), vacated.getBedNumber());
         return ResponseEntity.ok(ApiResponse.success(vacated, "Student vacated successfully. Bed released to AVAILABLE."));
     }
 
@@ -78,7 +89,9 @@ public class StudentController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete vacated student record")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(@PathVariable String id) {
+        log.warn("REST: Admin deleting student record '{}'", id);
         studentService.deleteStudent(id);
+        log.info("REST: Student record '{}' deleted", id);
         return ResponseEntity.ok(ApiResponse.successMessage("Student deleted successfully"));
     }
 
@@ -88,6 +101,7 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDto>> updatePaymentStatus(
             @PathVariable String id,
             @RequestParam String status) {
+        log.info("REST: Updating payment status for student '{}' to '{}'", id, status);
         StudentResponseDto updated = studentService.updatePaymentStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success(updated, "Payment status updated successfully"));
     }
@@ -96,7 +110,9 @@ public class StudentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Synchronize live recurring monthly fee due dates for all active students based on joining date")
     public ResponseEntity<ApiResponse<Integer>> syncMonthlyDues() {
+        log.info("REST: Triggering live monthly due dates synchronization for all active students");
         int updated = studentService.syncLiveMonthlyDueDates();
+        log.info("REST: Completed live monthly dues sync: {} students updated", updated);
         return ResponseEntity.ok(ApiResponse.success(updated, "Successfully synchronized live monthly fee due dates for " + updated + " student(s)"));
     }
 }

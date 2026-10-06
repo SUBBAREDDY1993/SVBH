@@ -13,6 +13,7 @@ import com.srivenkateswarahostel.model.StudentStatus;
 import com.srivenkateswarahostel.repository.PaymentRepository;
 import com.srivenkateswarahostel.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -35,11 +37,18 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponseDto recordPayment(PaymentRequest request) {
+        log.info("Recording payment of ₹{} for student '{}' (paymentType: {}, method: {})",
+                request.getAmount(), request.getStudentId(), request.getPaymentType(), request.getPaymentMethod());
+
         Student student = studentRepository.findByStudentId(request.getStudentId())
                 .or(() -> studentRepository.findById(request.getStudentId()))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + request.getStudentId()));
+                .orElseThrow(() -> {
+                    log.error("Payment failed: Student not found with ID '{}'", request.getStudentId());
+                    return new ResourceNotFoundException("Student not found: " + request.getStudentId());
+                });
 
         if (request.getAmount() <= 0) {
+            log.warn("Payment failed: Invalid non-positive amount ₹{}", request.getAmount());
             throw new BadRequestException("Payment amount must be greater than zero");
         }
 
@@ -68,6 +77,7 @@ public class PaymentService {
                 .build();
 
         Payment savedPayment = paymentRepository.save(payment);
+        log.info("Payment saved with receipt '{}' for student '{}'", receiptNumber, student.getFullName());
 
         // Update student payment dates if it is a monthly rent payment
         if (request.getPaymentType() == PaymentType.MONTHLY_RENT) {
@@ -94,6 +104,8 @@ public class PaymentService {
 
             student.setUpdatedAt(LocalDateTime.now());
             studentRepository.save(student);
+            log.info("Updated student '{}' paymentStatus to '{}' and nextDueDate to {}",
+                    student.getFullName(), student.getPaymentStatus(), newDue);
         }
 
         auditService.log("PAYMENT", "PAYMENT", savedPayment.getReceiptNumber(),

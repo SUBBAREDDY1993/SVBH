@@ -6,6 +6,7 @@ import com.srivenkateswarahostel.service.PaymentReminderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reminders")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Payment Reminders", description = "Fee Payment Reminders & Scheduled Notifications")
 public class PaymentReminderController {
 
@@ -61,7 +63,10 @@ public class PaymentReminderController {
             @PathVariable String studentId,
             @RequestParam(defaultValue = "MANUAL") String slot,
             @RequestParam(defaultValue = "false") boolean force) {
+        log.info("REST: Triggering WhatsApp reminder for student '{}' (slot: {}, force: {})", studentId, slot, force);
         PaymentReminderDto result = reminderService.dispatchWhatsAppReminder(studentId, slot, force);
+        log.info("REST: WhatsApp reminder for student '{}' result: status={}, error={}",
+                studentId, result.getStatus(), result.getLastError());
         String msg = "SENT".equalsIgnoreCase(result.getStatus())
                 ? "WhatsApp fee reminder sent successfully to " + result.getStudentName()
                 : "PENDING".equalsIgnoreCase(result.getStatus())
@@ -75,7 +80,9 @@ public class PaymentReminderController {
     @Operation(summary = "Retry sending a previously failed fee reminder")
     public ResponseEntity<ApiResponse<PaymentReminderDto>> retryStudentReminder(
             @PathVariable String studentId) {
+        log.info("REST: Retrying failed reminder for student '{}'", studentId);
         PaymentReminderDto result = reminderService.retryReminder(studentId);
+        log.info("REST: Retry result for student '{}': status={}, error={}", studentId, result.getStatus(), result.getLastError());
         String msg = "SENT".equalsIgnoreCase(result.getStatus())
                 ? "WhatsApp fee reminder retry succeeded for " + result.getStudentName()
                 : "Retry failed: " + (result.getLastError() != null ? result.getLastError() : "Unknown error");
@@ -89,7 +96,10 @@ public class PaymentReminderController {
             @RequestParam(defaultValue = "MORNING") String slot,
             @RequestParam(defaultValue = "false") boolean force,
             @RequestParam(defaultValue = "false") boolean includeSkipped) {
+        log.info("REST: Admin triggering reminder batch (slot: {}, force: {}, includeSkipped: {})", slot, force, includeSkipped);
         ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, force, includeSkipped);
+        log.info("REST: Reminder batch completed: sent={}, alreadyReminded={}, pending={}, totalEligible={}",
+                result.getRemindersSent(), result.getAlreadyRemindedCount(), result.getPendingCount(), result.getTotalEligibleStudents());
         return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
     }
 
@@ -98,7 +108,10 @@ public class PaymentReminderController {
     @Operation(summary = "Send reminders to all residents including those previously skipped or manually sent")
     public ResponseEntity<ApiResponse<ReminderBatchResultDto>> sendSkippedReminders(
             @RequestParam(defaultValue = "ALL") String slot) {
+        log.info("REST: Admin triggering send-skipped reminders (slot: {})", slot);
         ReminderBatchResultDto result = reminderService.processScheduledReminders(slot, true, true);
+        log.info("REST: Send-skipped batch completed: sent={}, pending={}",
+                result.getRemindersSent(), result.getPendingCount());
         return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
     }
 
@@ -107,7 +120,9 @@ public class PaymentReminderController {
     @Operation(summary = "Mark all eligible pending reminders as sent via WhatsApp Web/Broadcast")
     public ResponseEntity<ApiResponse<ReminderBatchResultDto>> markAllAsSent(
             @RequestParam(defaultValue = "ALL") String slot) {
+        log.info("REST: Admin marking all pending reminders as sent (slot: {})", slot);
         ReminderBatchResultDto result = reminderService.markAllAsSentViaWhatsAppWeb(slot);
+        log.info("REST: Mark all as sent completed: updated {} reminders", result.getRemindersSent());
         return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
     }
 

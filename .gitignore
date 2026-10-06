@@ -34,3 +34,7 @@ logs/
 # OS Generated
 .DS_Store
 Thumbs.db
+
+# Database Backups
+mongo_backup*/
+*.bson

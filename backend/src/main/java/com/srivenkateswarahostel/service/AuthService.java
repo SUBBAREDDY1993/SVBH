@@ -10,6 +10,7 @@ import com.srivenkateswarahostel.model.User;
 import com.srivenkateswarahostel.repository.UserRepository;
 import com.srivenkateswarahostel.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
@@ -27,15 +29,20 @@ public class AuthService {
     private final AuditService auditService;
 
     public AuthResponse login(LoginRequest request) {
+        log.info("Authenticating credentials for username '{}'", request.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
         String token = jwtTokenProvider.generateToken(authentication);
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUsername()));
+                .orElseThrow(() -> {
+                    log.error("Authenticated user not found in database: {}", request.getUsername());
+                    return new ResourceNotFoundException("User not found: " + request.getUsername());
+                });
 
         auditService.log("LOGIN", "USER", user.getId(), "User logged in: " + user.getUsername());
+        log.info("User '{}' authenticated successfully (ID: {}, Role: {})", user.getUsername(), user.getId(), user.getRole());
 
         return AuthResponse.builder()
                 .token(token)
@@ -50,10 +57,12 @@ public class AuthService {
     }
 
     public void changePassword(String username, ChangePasswordRequest request) {
+        log.info("Processing password change request for user '{}'", username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            log.warn("Password change failed for '{}': current password did not match", username);
             throw new BadRequestException("Current password does not match");
         }
 
@@ -61,6 +70,7 @@ public class AuthService {
         userRepository.save(user);
 
         auditService.log("CHANGE_PASSWORD", "USER", user.getId(), "Password updated for user: " + username);
+        log.info("Password successfully changed for user '{}'", username);
     }
 
     public UserDto getCurrentUser(String username) {

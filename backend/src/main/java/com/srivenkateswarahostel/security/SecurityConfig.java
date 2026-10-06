@@ -30,6 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final RequestLoggingFilter requestLoggingFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
 
@@ -76,6 +77,7 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(requestLoggingFilter, org.springframework.security.web.context.SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -86,8 +88,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*")); // Allow local & network origins
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Trace-Id", "X-Request-Id"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Trace-Id", "X-Request-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

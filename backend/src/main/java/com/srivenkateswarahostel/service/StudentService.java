@@ -44,11 +44,17 @@ public class StudentService {
 
     @Transactional
     public StudentResponseDto admitStudent(StudentAdmissionRequest request) {
+        log.info("Admitting new student '{}', bed '{}'", request.getFullName(), request.getBedId());
+
         // 1. Verify Bed exists and is AVAILABLE
         Bed bed = bedRepository.findByBedId(request.getBedId())
-                .orElseThrow(() -> new ResourceNotFoundException("Bed not found with ID: " + request.getBedId()));
+                .orElseThrow(() -> {
+                    log.error("Admission failed: Bed not found with ID '{}'", request.getBedId());
+                    return new ResourceNotFoundException("Bed not found with ID: " + request.getBedId());
+                });
 
         if (bed.getStatus() != BedStatus.AVAILABLE) {
+            log.warn("Admission failed: Bed '{}' is currently {}", request.getBedId(), bed.getStatus());
             throw new BadRequestException("Bed " + request.getBedId() + " is currently " + bed.getStatus() + ". Only AVAILABLE beds can be allocated.");
         }
 
@@ -95,6 +101,8 @@ public class StudentService {
                 .build();
 
         Student savedStudent = studentRepository.save(student);
+        log.info("Student record saved: studentId='{}', name='{}', room={}, bed={}",
+                savedStudent.getStudentId(), savedStudent.getFullName(), bed.getRoomNumber(), bed.getBedNumber());
 
         // 5. Update Bed to OCCUPIED
         bed.setStatus(BedStatus.OCCUPIED);
@@ -137,9 +145,13 @@ public class StudentService {
 
     @Transactional
     public StudentResponseDto updateStudent(String id, StudentUpdateRequest request) {
+        log.info("Updating student details for ID '{}'", id);
         Student student = studentRepository.findById(id)
                 .or(() -> studentRepository.findByStudentId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.error("Update failed: Student not found with ID '{}'", id);
+                    return new ResourceNotFoundException("Student not found with ID: " + id);
+                });
 
         student.setFullName(request.getFullName().trim());
         student.setFatherName(request.getFatherName());
@@ -189,6 +201,7 @@ public class StudentService {
         }
 
         auditService.log("UPDATE", "STUDENT", updated.getStudentId(), "Updated student details: " + updated.getFullName());
+        log.info("Student details updated successfully for '{}' (ID: {})", updated.getFullName(), updated.getStudentId());
         return toStudentResponseDto(updated);
     }
 
@@ -222,11 +235,16 @@ public class StudentService {
 
     @Transactional
     public StudentResponseDto markNoticePeriod(String id, NoticePeriodRequest request) {
+        log.info("Marking notice period for student ID '{}', expected vacate date: {}", id, request.getExpectedVacateDate());
         Student student = studentRepository.findById(id)
                 .or(() -> studentRepository.findByStudentId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
+                .orElseThrow(() -> {
+                    log.error("Notice period failed: Student not found with ID '{}'", id);
+                    return new ResourceNotFoundException("Student not found with ID: " + id);
+                });
 
         if (student.getStatus() == StudentStatus.VACATED) {
+            log.warn("Notice period failed: Student '{}' has already vacated", student.getFullName());
             throw new BadRequestException("Student has already vacated");
         }
 
@@ -242,17 +260,23 @@ public class StudentService {
         Student saved = studentRepository.save(student);
         auditService.log("NOTICE_PERIOD", "STUDENT", saved.getStudentId(),
                 "Marked student " + saved.getFullName() + " in notice period until " + request.getExpectedVacateDate());
+        log.info("Student '{}' (ID: {}) status updated to NOTICE_PERIOD", saved.getFullName(), saved.getStudentId());
 
         return toStudentResponseDto(saved);
     }
 
     @Transactional
     public StudentResponseDto vacateStudent(String id, VacateStudentRequest request) {
+        log.info("Processing vacate request for student ID '{}'", id);
         Student student = studentRepository.findById(id)
                 .or(() -> studentRepository.findByStudentId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
+                .orElseThrow(() -> {
+                    log.error("Vacate failed: Student not found with ID '{}'", id);
+                    return new ResourceNotFoundException("Student not found with ID: " + id);
+                });
 
         if (student.getStatus() == StudentStatus.VACATED) {
+            log.warn("Vacate failed: Student '{}' is already vacated", student.getFullName());
             throw new BadRequestException("Student is already vacated");
         }
 
@@ -269,6 +293,7 @@ public class StudentService {
                 bed.setUpdatedAt(LocalDateTime.now());
                 bedRepository.save(bed);
                 roomService.syncRoomStats(bed.getRoomNumber());
+                log.info("Released bed '{}' (room: {}) back to AVAILABLE", bedId, bed.getRoomNumber());
             });
         }
 
@@ -301,15 +326,20 @@ public class StudentService {
 
         auditService.log("VACATE", "STUDENT", saved.getStudentId(),
                 "Student " + saved.getFullName() + " vacated from Bed " + bedId + ". Bed is now AVAILABLE.");
+        log.info("Student '{}' (ID: {}) successfully vacated", saved.getFullName(), saved.getStudentId());
 
         return toStudentResponseDto(saved);
     }
 
     @Transactional
     public void deleteStudent(String id) {
+        log.warn("Deleting resident record for ID '{}'", id);
         Student student = studentRepository.findById(id)
                 .or(() -> studentRepository.findByStudentId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
+                .orElseThrow(() -> {
+                    log.error("Delete failed: Student not found with ID '{}'", id);
+                    return new ResourceNotFoundException("Student not found: " + id);
+                });
 
         // If student currently occupies a bed, release the bed back to AVAILABLE
         if (student.getBedId() != null && student.getStatus() != StudentStatus.VACATED) {
@@ -322,11 +352,13 @@ public class StudentService {
                 bed.setUpdatedAt(LocalDateTime.now());
                 bedRepository.save(bed);
                 roomService.syncRoomStats(bed.getRoomNumber());
+                log.info("Auto-released bed '{}' to AVAILABLE prior to student deletion", bedId);
             });
         }
 
         studentRepository.delete(student);
         auditService.log("DELETE", "STUDENT", student.getStudentId(), "Permanently deleted resident: " + student.getFullName());
+        log.info("Resident '{}' (ID: {}) permanently deleted from database", student.getFullName(), student.getStudentId());
     }
 
     /**
@@ -404,12 +436,17 @@ public class StudentService {
 
     @Transactional
     public StudentResponseDto updatePaymentStatus(String id, String status) {
+        log.info("Updating fee payment status for resident ID '{}' to '{}'", id, status);
         Student student = studentRepository.findById(id)
                 .or(() -> studentRepository.findByStudentId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
+                .orElseThrow(() -> {
+                    log.error("Payment status update failed: Student not found with ID '{}'", id);
+                    return new ResourceNotFoundException("Student not found: " + id);
+                });
 
         String normalizedStatus = status != null ? status.trim().toUpperCase() : "PENDING";
         if (!List.of("PAID", "PENDING", "HALF_PAID").contains(normalizedStatus)) {
+            log.warn("Invalid payment status requested: '{}'", status);
             throw new IllegalArgumentException("Invalid payment status: " + status + ". Allowed values: PAID, PENDING, HALF_PAID");
         }
 
@@ -426,6 +463,8 @@ public class StudentService {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String actor = auth != null && auth.getName() != null ? auth.getName() : "ADMIN";
+        log.info("Fee status updated for resident '{}' from '{}' to '{}' by '{}'",
+                saved.getFullName(), previousStatus, normalizedStatus, actor);
         auditService.log("PAYMENT_STATUS_UPDATE", "STUDENT", saved.getStudentId(),
                 String.format("Security: Fee status changed from '%s' to '%s' by user '%s'",
                         previousStatus != null ? previousStatus : "AUTO_CALCULATED", normalizedStatus, actor));

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/expenses")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Daily Expenses & Profit", description = "Hostel operational expense logging and profit tracking")
 public class ExpenseController {
 
@@ -32,7 +34,7 @@ public class ExpenseController {
     public ResponseEntity<ApiResponse<List<ExpenseDto>>> getExpenses(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
+        log.debug("REST: Fetching expenses (startDate: {}, endDate: {})", startDate, endDate);
         List<ExpenseDto> list;
         if (startDate != null && endDate != null) {
             list = expenseService.getExpensesByDateRange(startDate, endDate);
@@ -46,6 +48,7 @@ public class ExpenseController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Get expense summary metrics (today, month, year, by category)")
     public ResponseEntity<ApiResponse<ExpenseSummaryDto>> getExpenseSummary() {
+        log.debug("REST: Fetching expense summary metrics");
         ExpenseSummaryDto summary = expenseService.getExpenseSummary();
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
@@ -55,6 +58,7 @@ public class ExpenseController {
     @Operation(summary = "Get monthly Profit & Loss report (Collections vs Expenses vs Net Profit)")
     public ResponseEntity<ApiResponse<ProfitLossReportDto>> getProfitLossReport(
             @RequestParam(required = false) Integer year) {
+        log.debug("REST: Fetching Profit & Loss report for year: {}", year);
         ProfitLossReportDto report = expenseService.getProfitLossReport(year);
         return ResponseEntity.ok(ApiResponse.success(report));
     }
@@ -63,7 +67,9 @@ public class ExpenseController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Record a daily operational expense")
     public ResponseEntity<ApiResponse<ExpenseDto>> createExpense(@Valid @RequestBody ExpenseDto dto) {
+        log.info("REST: Recording operational expense: ₹{} under category '{}'", dto.getAmount(), dto.getCategory());
         ExpenseDto created = expenseService.createExpense(dto);
+        log.info("REST: Expense recorded successfully with ID '{}'", created.getId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Expense recorded successfully"));
     }
@@ -74,7 +80,9 @@ public class ExpenseController {
     public ResponseEntity<ApiResponse<ExpenseDto>> updateExpense(
             @PathVariable String id,
             @Valid @RequestBody ExpenseDto dto) {
+        log.info("REST: Updating expense record ID '{}'", id);
         ExpenseDto updated = expenseService.updateExpense(id, dto);
+        log.info("REST: Expense ID '{}' updated successfully", id);
         return ResponseEntity.ok(ApiResponse.success(updated, "Expense updated successfully"));
     }
 
@@ -82,7 +90,9 @@ public class ExpenseController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete an expense record")
     public ResponseEntity<ApiResponse<Void>> deleteExpense(@PathVariable String id) {
+        log.warn("REST: Admin deleting expense record ID '{}'", id);
         expenseService.deleteExpense(id);
+        log.info("REST: Expense record ID '{}' deleted successfully", id);
         return ResponseEntity.ok(ApiResponse.successMessage("Expense deleted successfully"));
     }
 }
