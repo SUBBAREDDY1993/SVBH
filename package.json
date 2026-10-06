@@ -4,8 +4,9 @@
   "private": true,
   "description": "Sri Venkateswara Boys Hostel Management System",
   "scripts": {
-    "start": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
-    "dev": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
+    "start": "serve -s frontend/dist",
+    "dev": "serve -s frontend/dist",
+    "dev:local": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
     "dev:backend": "powershell -ExecutionPolicy Bypass -File ./mvn.ps1 -f backend/pom.xml spring-boot:run",
     "dev:frontend": "npm run dev --prefix frontend",
     "build": "npm install --prefix frontend ; npm run build --prefix frontend",
@@ -13,6 +14,9 @@
     "build:backend": "powershell -ExecutionPolicy Bypass -File ./mvn.ps1 -f backend/pom.xml clean package -DskipTests",
     "build:frontend": "npm run build --prefix frontend",
     "install:all": "npm install && npm install --prefix frontend"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
