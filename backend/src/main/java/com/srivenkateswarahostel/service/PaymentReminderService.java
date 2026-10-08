@@ -43,27 +43,27 @@ public class PaymentReminderService {
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
     /**
-     * Daily morning reminder task at 9:00 AM.
+     * Daily morning reminder task at 9:00 AM IST.
      */
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Kolkata")
     public void scheduledMorningReminders() {
         log.info("Starting automated Morning fee payment reminder job...");
         processScheduledReminders("MORNING", false, false);
     }
 
     /**
-     * Daily evening reminder task at 6:00 PM.
+     * Daily evening reminder task at 6:00 PM IST.
      */
-    @Scheduled(cron = "0 0 18 * * *")
+    @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Kolkata")
     public void scheduledEveningReminders() {
         log.info("Starting automated Evening fee payment reminder job...");
         processScheduledReminders("EVENING", false, false);
     }
 
     /**
-     * Daily night reminder task at 9:00 PM.
+     * Daily night reminder task at 9:00 PM IST.
      */
-    @Scheduled(cron = "0 0 21 * * *")
+    @Scheduled(cron = "0 0 21 * * *", zone = "Asia/Kolkata")
     public void scheduledNightReminders() {
         log.info("Starting automated Night fee payment reminder job at 9:00 PM...");
         processScheduledReminders("NIGHT", false, false);
@@ -275,7 +275,7 @@ public class PaymentReminderService {
                     .reminderType(daysUntilDue < 0 ? "OVERDUE" : (daysUntilDue == 0 ? "DUE_TODAY" : "UPCOMING"))
                     .reminderSlot(slot)
                     .reminderDate(today)
-                    .sentAt(LocalDateTime.now())
+                    .sentAt(null)
                     .channel("WHATSAPP_CLOUD_API")
                     .message(fullMessage)
                     .status(ReminderStatus.PROCESSING.name())
@@ -310,6 +310,7 @@ public class PaymentReminderService {
                 logEntry.setStatus(ReminderStatus.PENDING.name());
                 logEntry.setLastError("Meta WhatsApp Cloud API credentials not configured. Click WhatsApp to send via WhatsApp Web/App.");
                 logEntry.setChannel("WHATSAPP_WEB");
+                logEntry.setSentAt(null);
             } else {
                 logEntry.setStatus(ReminderStatus.FAILED.name());
                 logEntry.setLastError(waResult.getErrorMessage());

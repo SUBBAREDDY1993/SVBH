@@ -68,11 +68,11 @@ public class AdminPaymentAlertService {
     }
 
     /**
-     * Daily morning management alert at 8:30 AM.
+     * Daily morning management alert at 8:30 AM IST.
      * Evaluates all active residents with fee dues in 1-3 days (urgent) and 4-5 days (upcoming).
      * Dispatches notification to svbhostel2026@gmail.com and WhatsApp digest for 8985010694.
      */
-    @Scheduled(cron = "0 30 8 * * *")
+    @Scheduled(cron = "0 30 8 * * *", zone = "Asia/Kolkata")
     public void scheduledDailyMorningManagementAlert() {
         log.info("Running automated 8:30 AM management fee alert job (5-day & 3-day window)...");
         try {
@@ -83,9 +83,9 @@ public class AdminPaymentAlertService {
     }
 
     /**
-     * Daily evening management alert at 6:30 PM.
+     * Daily evening management alert at 6:30 PM IST.
      */
-    @Scheduled(cron = "0 30 18 * * *")
+    @Scheduled(cron = "0 30 18 * * *", zone = "Asia/Kolkata")
     public void scheduledDailyEveningManagementAlert() {
         log.info("Running automated 6:30 PM evening management fee alert check...");
         try {

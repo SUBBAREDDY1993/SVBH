@@ -367,7 +367,7 @@ public class StudentService {
      * month (e.g. October 2026) instead of remaining frozen in past admission months.
      */
     @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "0 5 0 * * *")
+    @Scheduled(cron = "0 5 0 * * *", zone = "Asia/Kolkata")
     @Transactional
     public int syncLiveMonthlyDueDates() {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
