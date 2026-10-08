@@ -47,7 +47,12 @@ export const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       if (!err.response) {
-        showError('Cannot connect to backend server. Make sure the Spring Boot backend is running on port 8081.');
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        showError(
+          isLocal
+            ? 'Cannot connect to backend server. Make sure the Spring Boot backend is running on port 8081.'
+            : 'Cannot connect to backend server. Please verify the backend service is running and accessible.'
+        );
       } else {
         showError(err.response?.data?.message || 'Invalid username or password');
       }

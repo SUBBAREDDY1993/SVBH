@@ -1,7 +1,16 @@
 import axios from 'axios';
 
+// Environment-based API Base URL (VITE_API_BASE_URL is set in .env or Render dashboard)
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8081/api';
+
+// Strip any trailing slash so subpaths like '/students' or '/auth/login' concatenate cleanly without duplicate slashes
+const baseURL = rawBaseUrl.replace(/\/+$/, '');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },

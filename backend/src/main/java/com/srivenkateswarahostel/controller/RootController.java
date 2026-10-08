@@ -110,7 +110,7 @@ public class RootController {
                 + "  <div class=\"card\">"
                 + "    <div class=\"badge\"><span class=\"badge-dot\"></span> API Service Online</div>"
                 + "    <h1>Sri Venkateswara Boys Hostel</h1>"
-                + "    <div class=\"subtitle\">Spring Boot Backend API Server (Port 8081)</div>"
+                + "    <div class=\"subtitle\">Spring Boot Backend API Server</div>"
                 + "    <div class=\"info-box\">"
                 + "      You have connected to the backend API service. To access the user interface and manage hostel operations, please launch the React frontend web application."
                 + "    </div>"
