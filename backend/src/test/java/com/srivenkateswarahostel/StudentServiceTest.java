@@ -1,6 +1,5 @@
 package com.srivenkateswarahostel;
 
-import com.srivenkateswarahostel.dto.BedTransferRequest;
 import com.srivenkateswarahostel.dto.StudentAdmissionRequest;
 import com.srivenkateswarahostel.dto.StudentResponseDto;
 import com.srivenkateswarahostel.dto.VacateStudentRequest;

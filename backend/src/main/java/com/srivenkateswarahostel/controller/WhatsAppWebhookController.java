@@ -3,7 +3,6 @@ package com.srivenkateswarahostel.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.srivenkateswarahostel.dto.IncomingReplyRequestDto;
-import com.srivenkateswarahostel.dto.IncomingReplyResponseDto;
 import com.srivenkateswarahostel.service.PaymentReminderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

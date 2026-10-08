@@ -6,7 +6,6 @@ import com.srivenkateswarahostel.dto.StudentResponseDto;
 import com.srivenkateswarahostel.dto.StudentUpdateRequest;
 import com.srivenkateswarahostel.dto.VacateStudentRequest;
 import com.srivenkateswarahostel.exception.BadRequestException;
-import com.srivenkateswarahostel.exception.DuplicateResourceException;
 import com.srivenkateswarahostel.exception.ResourceNotFoundException;
 import com.srivenkateswarahostel.model.*;
 import com.srivenkateswarahostel.repository.AllocationHistoryRepository;
