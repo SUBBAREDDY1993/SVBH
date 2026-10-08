@@ -1,11 +1,24 @@
 import axios from 'axios';
 
-// Environment-based API Base URL (VITE_API_BASE_URL is set in .env or Render dashboard)
-const rawBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:8081/api';
+// Resolve API Base URL dynamically:
+// 1. Explicit Vite build environment variable (VITE_API_BASE_URL / VITE_API_URL)
+// 2. Runtime browser hostname check: localhost -> http://localhost:8081/api, cloud -> https://svbh-backend.onrender.com/api
+const getApiBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.trim() !== '' && !envUrl.includes('localhost:8081')) {
+    return envUrl.trim();
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      // Running on cloud (Render / Production) - never call localhost
+      return 'https://svbh-backend.onrender.com/api';
+    }
+  }
+  return envUrl && envUrl.trim() !== '' ? envUrl.trim() : 'http://localhost:8081/api';
+};
 
+const rawBaseUrl = getApiBaseUrl();
 // Strip any trailing slash so subpaths like '/students' or '/auth/login' concatenate cleanly without duplicate slashes
 const baseURL = rawBaseUrl.replace(/\/+$/, '');
 
