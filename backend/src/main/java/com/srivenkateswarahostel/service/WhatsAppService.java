@@ -59,11 +59,25 @@ public class WhatsAppService {
      * Check if live Meta WhatsApp Cloud API credentials are configured.
      * Requires enabled=true, sandboxMode=false, a real access token, and a real phone number ID.
      */
-    public boolean isConfigured() {
+    public boolean isLiveConfigured() {
         return enabled
                 && !sandboxMode
                 && accessToken != null && !accessToken.isBlank() && !accessToken.startsWith("sandbox_")
                 && phoneNumberId != null && !phoneNumberId.isBlank() && !"105948372619485".equals(phoneNumberId);
+    }
+
+    /**
+     * Check if service is operating in simulated sandbox / demo mode.
+     */
+    public boolean isSandbox() {
+        return enabled && (sandboxMode || (accessToken != null && accessToken.startsWith("sandbox_")));
+    }
+
+    /**
+     * Check if Meta WhatsApp service is operational (either live credentials configured or sandbox mode active).
+     */
+    public boolean isConfigured() {
+        return enabled && (isLiveConfigured() || isSandbox());
     }
 
 
@@ -135,6 +149,23 @@ public class WhatsAppService {
             return WhatsAppSendResult.failure(err, normalizedPhone, null, 503);
         }
 
+        // Sandbox / Demo Mode: Simulate Meta WhatsApp Cloud API response with realistic wamid
+        if (isSandbox()) {
+            String fakeWamid = "wamid.HBgL" + normalizedPhone + "UCMR" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+            String simulatedResponse = String.format(
+                    "{\"messaging_product\":\"whatsapp\",\"contacts\":[{\"input\":\"%s\",\"wa_id\":\"%s\"}],\"messages\":[{\"id\":\"%s\"}]}",
+                    normalizedPhone, normalizedPhone, fakeWamid
+            );
+            log.info("[SANDBOX] Meta WhatsApp Cloud API fee reminder simulated for {}: WAMID: {}", maskPhone(normalizedPhone), fakeWamid);
+            return WhatsAppSendResult.builder()
+                    .success(true)
+                    .whatsappMessageId(fakeWamid)
+                    .recipientPhone(normalizedPhone)
+                    .httpStatusCode(200)
+                    .rawResponse(simulatedResponse)
+                    .build();
+        }
+
         String url = String.format("https://graph.facebook.com/%s/%s/messages", apiVersion, phoneNumberId);
 
 
@@ -201,6 +232,23 @@ public class WhatsAppService {
 
         if (!isConfigured()) {
             return WhatsAppSendResult.failure("WhatsApp credentials not configured", normalizedPhone, null, 503);
+        }
+
+        // Sandbox / Demo Mode: Simulate Meta WhatsApp text message
+        if (isSandbox()) {
+            String fakeWamid = "wamid.HBgL" + normalizedPhone + "UCTX" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+            String simulatedResponse = String.format(
+                    "{\"messaging_product\":\"whatsapp\",\"contacts\":[{\"input\":\"%s\",\"wa_id\":\"%s\"}],\"messages\":[{\"id\":\"%s\"}]}",
+                    normalizedPhone, normalizedPhone, fakeWamid
+            );
+            log.info("[SANDBOX] Meta WhatsApp text message simulated for {}: WAMID: {}", maskPhone(normalizedPhone), fakeWamid);
+            return WhatsAppSendResult.builder()
+                    .success(true)
+                    .whatsappMessageId(fakeWamid)
+                    .recipientPhone(normalizedPhone)
+                    .httpStatusCode(200)
+                    .rawResponse(simulatedResponse)
+                    .build();
         }
 
         String url = String.format("https://graph.facebook.com/%s/%s/messages", apiVersion, phoneNumberId);

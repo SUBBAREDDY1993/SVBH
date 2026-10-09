@@ -301,8 +301,9 @@ public class PaymentReminderService {
             logEntry.setApiResponse(waResult.getRawResponse());
             logEntry.setLastError(null);
             logEntry.setSentAt(LocalDateTime.now());
-            logEntry.setChannel("WHATSAPP_CLOUD_API");
-            log.info("WhatsApp Cloud API successfully sent fee reminder to {} (Message ID: {})",
+            logEntry.setChannel(whatsAppService.isSandbox() ? "WHATSAPP_SANDBOX" : "WHATSAPP_CLOUD_API");
+            log.info("WhatsApp {} successfully sent fee reminder to {} (Message ID: {})",
+                    whatsAppService.isSandbox() ? "Sandbox Simulation" : "Cloud API",
                     student.getFullName(), waResult.getWhatsappMessageId());
         } else {
             // Check if Meta credentials are not configured, fallback to WhatsApp Web link queue
@@ -709,7 +710,7 @@ public class PaymentReminderService {
                 .paid(paidCount)
                 .totalActive(activeStudents.size())
                 .whatsAppConfigured(whatsAppService.isConfigured())
-                .whatsAppProvider(whatsAppService.isConfigured() ? "META_CLOUD_API" : "WHATSAPP_WEB")
+                .whatsAppProvider(whatsAppService.isLiveConfigured() ? "META_CLOUD_API" : (whatsAppService.isSandbox() ? "META_SANDBOX" : "WHATSAPP_WEB"))
                 .build();
     }
 
