@@ -93,6 +93,11 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
   const handleSendLiveWhatsApp = async (reminder: PaymentReminder, force = true) => {
     setSendingStudentId(reminder.studentId);
     try {
+      if (!isMetaApiConfigured) {
+        // Meta credentials not set -> open WhatsApp Web/App directly and record as sent!
+        await handleOpenWhatsAppWeb(reminder);
+        return;
+      }
       const updated = await reminderService.sendStudentReminder(reminder.studentId, slot, force);
 
       if (updated.status === 'SENT') {
@@ -107,19 +112,7 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
         showError(`WhatsApp dispatch failed for ${reminder.studentName}: ${updated.lastError || 'API rejected'}`);
       } else {
         // Fallback: Open WhatsApp Web / App AND record manual reminder so it updates to Sent!
-        const cleanPhone = sanitizePhone(reminder.mobileNumber);
-        const encoded = encodeURIComponent(reminder.message);
-        window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
-
-        const recorded = await reminderService.recordManualReminder(reminder.studentId, 'WHATSAPP', reminder.message);
-        setRemindersList((prev) =>
-          prev.map((r) =>
-            r.studentId === reminder.studentId
-              ? { ...r, ...recorded, status: 'SENT', channel: 'WHATSAPP_WEB', sentAt: new Date().toISOString() }
-              : r
-          )
-        );
-        showSuccess(`Opened WhatsApp for ${reminder.studentName} and recorded as Sent (WhatsApp Web).`);
+        await handleOpenWhatsAppWeb(reminder);
       }
       onRefresh?.();
     } catch (err: any) {
@@ -352,14 +345,14 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      {/* Alert banner when Meta API is not yet configured */}
-      {isMetaApiConfigured === false && (
+      {/* Banner indicating Meta API status vs Web/App dispatch */}
+      {isMetaApiConfigured === true && (
         <Alert
-          severity="warning"
+          severity="success"
           variant="filled"
           sx={{
             borderRadius: 0,
-            bgcolor: '#b45309',
+            bgcolor: '#047857',
             color: '#ffffff',
             py: 1,
             px: 3,
@@ -367,10 +360,29 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
-            ⚡ Meta WhatsApp Cloud API credentials are not yet configured in application.properties.
+            ✓ Meta WhatsApp Cloud API Connected: Fee reminders dispatch automatically.
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: '#fef3c7', mt: 0.25 }}>
-            Automated background dispatch is running in WhatsApp Web mode. Click <strong>"Open Next Pending"</strong> or <strong>"Send WhatsApp"</strong> on each resident to open their pre-filled chat, or use <strong>"Mark All Sent"</strong> if you broadcasted messages.
+        </Alert>
+      )}
+
+      {isMetaApiConfigured === false && (
+        <Alert
+          severity="info"
+          variant="filled"
+          sx={{
+            borderRadius: 0,
+            bgcolor: '#0f766e',
+            color: '#ffffff',
+            py: 1.2,
+            px: 3,
+            '& .MuiAlert-icon': { color: '#ffffff' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.88rem' }}>
+            💡 When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App.
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', color: '#ccfbf1', mt: 0.35 }}>
+            Automated queue is ready below. Click <strong>"WhatsApp (Web/App)"</strong> on any resident to open their pre-filled chat, or use <strong>"Open Next Pending"</strong> to send one-by-one!
           </Typography>
         </Alert>
       )}
@@ -392,23 +404,25 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
             )}
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={isDispatchingAll ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-              disabled={isDispatchingAll}
-              onClick={handleDispatchAllIncludingSkipped}
-              sx={{
-                bgcolor: '#059669',
-                color: '#ffffff',
-                fontWeight: 800,
-                textTransform: 'none',
-                boxShadow: '0 2px 4px rgba(5,150,105,0.2)',
-                '&:hover': { bgcolor: '#047857' },
-              }}
-            >
-              {isDispatchingAll ? 'Dispatching All...' : 'Send to All (Meta API)'}
-            </Button>
+            {isMetaApiConfigured ? (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={isDispatchingAll ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+                disabled={isDispatchingAll}
+                onClick={handleDispatchAllIncludingSkipped}
+                sx={{
+                  bgcolor: '#059669',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  textTransform: 'none',
+                  boxShadow: '0 2px 4px rgba(5,150,105,0.2)',
+                  '&:hover': { bgcolor: '#047857' },
+                }}
+              >
+                {isDispatchingAll ? 'Dispatching All...' : 'Send to All (Meta API)'}
+              </Button>
+            ) : null}
             <Button
               variant="contained"
               size="small"
@@ -640,7 +654,7 @@ export const WhatsAppBatchModal: React.FC<WhatsAppBatchModalProps> = ({
                           '&:hover': { bgcolor: '#15803d' },
                         }}
                       >
-                        {isSending ? 'Sending...' : 'Send WhatsApp'}
+                        {isSending ? 'Sending...' : isMetaApiConfigured ? 'Send WhatsApp' : 'WhatsApp (Web/App)'}
                       </Button>
                     )}
 

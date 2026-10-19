@@ -89,10 +89,10 @@ export const PaymentDue: React.FC = () => {
   const [batchModalReminders, setBatchModalReminders] = useState<PaymentReminder[]>([]);
   const [batchModalSlot, setBatchModalSlot] = useState<string>('EVENING');
 
-  // Management 5-day & 3-day Alert State
   const [adminAlert, setAdminAlert] = useState<AdminDueAlert | null>(null);
   const [isSendingAdminAlert, setIsSendingAdminAlert] = useState(false);
   const [showAdminAlertDetails, setShowAdminAlertDetails] = useState(false);
+  const [isWaConfigured, setIsWaConfigured] = useState<boolean | null>(null);
 
   const loadDues = async () => {
     try {
@@ -134,6 +134,7 @@ export const PaymentDue: React.FC = () => {
     loadDues();
     loadReminders();
     loadAdminAlert();
+    reminderService.getReminderCounts().then(c => setIsWaConfigured(!!c.whatsAppConfigured)).catch(() => setIsWaConfigured(false));
   }, []);
 
   const handleSendAdminAlert = async (force = true) => {
@@ -250,14 +251,16 @@ export const PaymentDue: React.FC = () => {
       `📍 Opposite Venkatesh Kirana & General Store, Near Balaji Flour Mill, Grand Lucky Restaurant Road, SR Nagar, Ameerpet, Hyderabad - 500038\n` +
       `📞 Phone: +91 9441843574 | ✉️ svbhostel2026@gmail.com`;
 
+    // Open WhatsApp Web / App
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+
     try {
-      await reminderService.recordManualReminder(item.studentId, 'WHATSAPP', message);
+      await reminderService.recordManualReminder(item.studentId, 'WHATSAPP_WEB', message);
+      showSuccess(`Opened WhatsApp chat for ${item.studentName} and recorded as Sent!`);
       loadReminders();
     } catch (e) {
       console.warn('Could not record reminder log:', e);
     }
-
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const totalOverdueAmount = overdueList.reduce((sum, d) => sum + (d.monthlyRent || 0), 0);
@@ -327,6 +330,13 @@ export const PaymentDue: React.FC = () => {
             <Typography variant="caption" sx={{ color: '#166534', fontWeight: 600, display: 'block', mt: 0.3 }}>
               📊 {todayReminders.length} reminder(s) logged today
             </Typography>
+            <Box sx={{ mt: 1, p: 1.2, borderRadius: 2, bgcolor: isWaConfigured ? '#dcfce7' : '#eff6ff', border: `1px solid ${isWaConfigured ? '#86efac' : '#bfdbfe'}` }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: isWaConfigured ? '#166534' : '#1e40af', display: 'block' }}>
+                {isWaConfigured
+                  ? '✓ Meta WhatsApp Cloud API Connected: Fee reminders dispatch automatically.'
+                  : '💡 When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App.'}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 

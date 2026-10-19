@@ -65,6 +65,10 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/",
+                                "/api",
+                                "/api/",
+                                "/api/health",
+                                "/health",
                                 "/error",
                                 "/favicon.ico",
                                 "/api/auth/**",
@@ -94,23 +98,45 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = new ArrayList<>();
+        
+        List<String> originPatterns = new ArrayList<>();
         if (allowedOrigins != null && !allowedOrigins.trim().isEmpty()) {
-            origins.addAll(Arrays.stream(allowedOrigins.split(","))
+            originPatterns.addAll(Arrays.stream(allowedOrigins.split(","))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList()));
         }
-        if (!origins.contains("http://localhost:5173")) {
-            origins.add("http://localhost:5173");
-        }
-        if (!origins.contains("https://svbh-10.onrender.com")) {
-            origins.add("https://svbh-10.onrender.com");
-        }
-        configuration.setAllowedOriginPatterns(origins);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Trace-Id", "X-Request-Id"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Trace-Id", "X-Request-Id"));
+
+        // Loopback and Localhost on any port (5173, 3000, 4173, etc.)
+        originPatterns.add("http://localhost:[*]");
+        originPatterns.add("http://127.0.0.1:[*]");
+        originPatterns.add("http://[::1]:[*]");
+        originPatterns.add("http://localhost");
+        originPatterns.add("http://127.0.0.1");
+
+        // Wi-Fi and Local Network IPs on any port for mobile and tablet testing
+        originPatterns.add("http://192.168.*.*:[*]");
+        originPatterns.add("http://192.168.*.*");
+        originPatterns.add("http://10.*.*.*:[*]");
+        originPatterns.add("http://10.*.*.*");
+        originPatterns.add("http://172.1[6-9].*.*:[*]");
+        originPatterns.add("http://172.2[0-9].*.*:[*]");
+        originPatterns.add("http://172.3[0-1].*.*:[*]");
+        originPatterns.add("http://*.local:[*]");
+        originPatterns.add("http://*.local");
+
+        // Render and Cloud Production
+        originPatterns.add("https://*.onrender.com");
+        originPatterns.add("https://svbh-10.onrender.com");
+        originPatterns.add("https://svbh-backend.onrender.com");
+
+        // Universal wildcard fallback so mobile, dev servers, and proxies are never rejected by CORS
+        originPatterns.add("*");
+
+        configuration.setAllowedOriginPatterns(originPatterns);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Trace-Id", "X-Request-Id", "Content-Disposition"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

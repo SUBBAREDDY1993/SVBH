@@ -390,6 +390,23 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Notice Banner */}
+        <div
+          className={`p-2.5 px-3 rounded-3 mb-3 d-flex align-items-center gap-2 border ${
+            reminderCounts?.whatsAppConfigured
+              ? 'bg-success-subtle text-success-emphasis border-success-subtle'
+              : 'bg-primary-subtle text-primary-emphasis border-primary-subtle'
+          }`}
+          style={{ fontSize: '0.82rem' }}
+        >
+          <i className={`bi ${reminderCounts?.whatsAppConfigured ? 'bi-check-circle-fill text-success' : 'bi-info-circle-fill text-primary'}`}></i>
+          <span className="fw-semibold">
+            {reminderCounts?.whatsAppConfigured
+              ? '✓ Meta WhatsApp Cloud API Connected: Fee reminders dispatch automatically.'
+              : '💡 When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App.'}
+          </span>
+        </div>
+
         {/* Loading State (Requirement 10) */}
         {isLoadingReminders && reminders.length === 0 ? (
           <div className="p-5 text-center my-2">
@@ -542,6 +559,9 @@ export const Dashboard: React.FC = () => {
                           href={rem.whatsappUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            reminderService.recordManualReminder(rem.studentId, 'WHATSAPP_WEB', rem.reminderText).catch(() => {});
+                          }}
                           className="btn btn-sm btn-outline-success flex-grow-1 fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 rounded-3 shadow-2xs"
                         >
                           <i className="bi bi-whatsapp"></i>

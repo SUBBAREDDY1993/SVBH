@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -46,19 +47,25 @@ export const Notifications: React.FC = () => {
   const [testSimMsg, setTestSimMsg] = useState('I have paid 5000 via Google Pay');
   const [isSimulating, setIsSimulating] = useState(false);
 
+  const [isMetaApiConfigured, setIsMetaApiConfigured] = useState<boolean | null>(null);
+
   const fetchAll = async () => {
     try {
       setIsLoading(true);
-      const [statsData, alertData, remData, repliesData] = await Promise.all([
+      const [statsData, alertData, remData, repliesData, countsData] = await Promise.all([
         dashboardService.getStats(),
         reminderService.getAdminDueAlert().catch(() => null),
         reminderService.getActiveReminders().catch(() => []),
         reminderService.getIncomingReplies().catch(() => []),
+        reminderService.getReminderCounts().catch(() => null),
       ]);
       setStats(statsData);
       setAdminAlert(alertData);
       setFeeReminders(remData);
       setIncomingReplies(repliesData);
+      if (countsData) {
+        setIsMetaApiConfigured(!!countsData.whatsAppConfigured);
+      }
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
@@ -79,16 +86,35 @@ export const Notifications: React.FC = () => {
     }
   };
 
-  const handleSendLiveWhatsApp = async (studentId: string, studentName: string) => {
+  const handleSendLiveWhatsApp = async (rem: FeeReminder) => {
     try {
-      setSendingStudentId(studentId);
-      const res = await reminderService.sendStudentReminder(studentId, 'MANUAL', true);
+      setSendingStudentId(rem.studentId);
+      if (!isMetaApiConfigured) {
+        // Meta credentials not set -> open WhatsApp Web/App directly and record as sent!
+        let url = rem.whatsappUrl;
+        if (!url && rem.mobileNumber) {
+          const digits = rem.mobileNumber.replace(/[^0-9]/g, '');
+          const phone = digits.length === 10 ? `91${digits}` : digits;
+          url = `https://wa.me/${phone}?text=${encodeURIComponent(rem.reminderText || rem.message || '')}`;
+        }
+        if (url) {
+          window.open(url, '_blank');
+        }
+        await reminderService.recordManualReminder(rem.studentId, 'WHATSAPP_WEB', rem.reminderText);
+        showSuccess(`Opened WhatsApp for ${rem.studentName} and recorded as Sent (WhatsApp Web).`);
+        await fetchAll();
+        return;
+      }
+
+      // Meta credentials configured -> dispatch live via Meta Cloud API automatically!
+      const res = await reminderService.sendStudentReminder(rem.studentId, 'MANUAL', true);
       if (res.status === 'SENT') {
-        showSuccess(`WhatsApp fee reminder sent to ${studentName}! (ID: ${res.whatsappMessageId || 'Confirmed'})`);
+        showSuccess(`WhatsApp fee reminder dispatched automatically to ${rem.studentName}! (ID: ${res.whatsappMessageId || 'Confirmed'})`);
       } else if (res.status === 'FAILED') {
-        showError(`Failed to send WhatsApp reminder to ${studentName}: ${res.lastError || 'API rejected'}`);
+        showError(`Failed to send WhatsApp reminder to ${rem.studentName}: ${res.lastError || 'API rejected'}`);
       } else {
-        showSuccess(`WhatsApp reminder prepared for ${studentName}`);
+        if (res.whatsappUrl) window.open(res.whatsappUrl, '_blank');
+        showSuccess(`Opened WhatsApp Web/App for ${rem.studentName}`);
       }
       await fetchAll();
     } catch (err: any) {
@@ -307,6 +333,24 @@ export const Notifications: React.FC = () => {
             </Box>
           </Box>
 
+          {/* Dispatch Notice Banner */}
+          <Alert
+            severity={isMetaApiConfigured ? 'success' : 'info'}
+            sx={{
+              mb: 2.5,
+              borderRadius: 2,
+              bgcolor: isMetaApiConfigured ? '#ecfdf5' : '#f0fdfa',
+              border: `1px solid ${isMetaApiConfigured ? '#a7f3d0' : '#99f6e4'}`,
+              color: isMetaApiConfigured ? '#065f46' : '#115e59',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {isMetaApiConfigured
+                ? '✓ Meta WhatsApp Cloud API Connected: Fee reminders dispatch automatically.'
+                : '💡 When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App.'}
+            </Typography>
+          </Alert>
+
           {feeReminders.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: 2 }}>
               <Typography variant="h6" sx={{ mb: 0.5 }}>🎉</Typography>
@@ -393,8 +437,8 @@ export const Notifications: React.FC = () => {
                         variant="contained"
                         size="small"
                         disabled={isSending}
-                        startIcon={isSending ? <CircularProgress size={14} color="inherit" /> : <SendIcon />}
-                        onClick={() => handleSendLiveWhatsApp(rem.studentId, rem.studentName)}
+                        startIcon={isSending ? <CircularProgress size={14} color="inherit" /> : <WhatsAppIcon />}
+                        onClick={() => handleSendLiveWhatsApp(rem)}
                         sx={{
                           textTransform: 'none',
                           fontWeight: 700,
@@ -402,7 +446,7 @@ export const Notifications: React.FC = () => {
                           '&:hover': { bgcolor: '#15803d' },
                         }}
                       >
-                        {isSending ? 'Sending...' : 'Send WhatsApp'}
+                        {isSending ? 'Sending...' : isMetaApiConfigured ? 'Send WhatsApp' : 'WhatsApp (Web/App)'}
                       </Button>
 
                       {rem.whatsappUrl && (

@@ -186,11 +186,11 @@ public class PaymentReminderService {
 
         String messageResult;
         if (!isWaConfigured) {
-            messageResult = String.format("Meta WhatsApp Cloud API credentials not configured in application.properties. %d reminders prepared in queue for WhatsApp Web dispatch.",
+            messageResult = String.format("When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App. (%d reminders queued)",
                     pendingCount > 0 ? pendingCount : eligibleStudents.size());
         } else {
-            messageResult = String.format("Prepared %s reminders: %d sent successfully via Meta Cloud API, %d failed, %d already delivered for today.",
-                    slot, remindersSent, failedCount, alreadyRemindedCount);
+            messageResult = String.format("Meta WhatsApp Cloud API active: %d sent automatically, %d failed, %d already delivered for today.",
+                    remindersSent, failedCount, alreadyRemindedCount);
         }
 
         return ReminderBatchResultDto.builder()
@@ -287,31 +287,33 @@ public class PaymentReminderService {
         logEntry.setLastAttemptAt(LocalDateTime.now());
         logEntry.setAttemptCount(logEntry.getAttemptCount() + 1);
 
-        // 1. Dispatch via Meta WhatsApp Cloud API
-        WhatsAppSendResult waResult = whatsAppService.sendFeeReminderTemplate(
-                student.getMobileNumber(),
-                student.getFullName(),
-                feeAmount,
-                dueDateStr
-        );
-
-        if (waResult.isSuccess()) {
-            logEntry.setStatus(ReminderStatus.SENT.name());
-            logEntry.setWhatsappMessageId(waResult.getWhatsappMessageId());
-            logEntry.setApiResponse(waResult.getRawResponse());
-            logEntry.setLastError(null);
-            logEntry.setSentAt(LocalDateTime.now());
-            logEntry.setChannel(whatsAppService.isSandbox() ? "WHATSAPP_SANDBOX" : "WHATSAPP_CLOUD_API");
-            log.info("WhatsApp {} successfully sent fee reminder to {} (Message ID: {})",
-                    whatsAppService.isSandbox() ? "Sandbox Simulation" : "Cloud API",
-                    student.getFullName(), waResult.getWhatsappMessageId());
+        if (!whatsAppService.isConfigured()) {
+            // Meta WhatsApp Cloud API credentials NOT configured:
+            // Queue as PENDING so resident is ready for WhatsApp Web/App dispatch
+            logEntry.setStatus(ReminderStatus.PENDING.name());
+            logEntry.setLastError("Meta WhatsApp Cloud API credentials not configured. Click WhatsApp to dispatch via Web/App.");
+            logEntry.setChannel("WHATSAPP_WEB");
+            logEntry.setSentAt(null);
+            logEntry.setWhatsappMessageId(null);
+            log.info("Meta WhatsApp Cloud API credentials not configured. Reminder queued as PENDING for {} (Click WhatsApp to dispatch via Web/App)", student.getFullName());
         } else {
-            // Check if Meta credentials are not configured, fallback to WhatsApp Web link queue
-            if (waResult.getHttpStatusCode() != null && waResult.getHttpStatusCode() == 503) {
-                logEntry.setStatus(ReminderStatus.PENDING.name());
-                logEntry.setLastError("Meta WhatsApp Cloud API credentials not configured. Click WhatsApp to send via WhatsApp Web/App.");
-                logEntry.setChannel("WHATSAPP_WEB");
-                logEntry.setSentAt(null);
+            // 1. Dispatch automatically via Meta WhatsApp Cloud API
+            WhatsAppSendResult waResult = whatsAppService.sendFeeReminderTemplate(
+                    student.getMobileNumber(),
+                    student.getFullName(),
+                    feeAmount,
+                    dueDateStr
+            );
+
+            if (waResult.isSuccess()) {
+                logEntry.setStatus(ReminderStatus.SENT.name());
+                logEntry.setWhatsappMessageId(waResult.getWhatsappMessageId());
+                logEntry.setApiResponse(waResult.getRawResponse());
+                logEntry.setLastError(null);
+                logEntry.setSentAt(LocalDateTime.now());
+                logEntry.setChannel(whatsAppService.isSandbox() ? "WHATSAPP_SANDBOX" : "WHATSAPP_CLOUD_API");
+                log.info("WhatsApp Cloud API successfully sent fee reminder to {} (Message ID: {})",
+                        student.getFullName(), waResult.getWhatsappMessageId());
             } else {
                 logEntry.setStatus(ReminderStatus.FAILED.name());
                 logEntry.setLastError(waResult.getErrorMessage());
@@ -367,34 +369,45 @@ public class PaymentReminderService {
                 ? customMessage
                 : generateReminderMessage(student, "MANUAL", daysUntilDue);
 
-        // If channel is WHATSAPP and Meta API is configured, attempt live dispatch
+        // If channel is WHATSAPP and Meta API credentials ARE configured, dispatch live via API
         if ("WHATSAPP".equalsIgnoreCase(channel) && whatsAppService.isConfigured()) {
             return dispatchWhatsAppReminder(student.getStudentId(), "MANUAL", true);
         }
 
-        PaymentReminderLog logEntry = PaymentReminderLog.builder()
-                .studentId(student.getStudentId())
-                .studentName(student.getFullName())
-                .mobileNumber(student.getMobileNumber())
-                .roomNumber(student.getRoomNumber())
-                .bedId(student.getBedId())
-                .amountDue(logAmount)
-                .nextPaymentDueDate(dueDate)
-                .daysUntilDue(daysUntilDue)
-                .billingMonth(dueDate.format(MONTH_FORMATTER))
-                .reminderSlot("MANUAL")
-                .reminderDate(today)
-                .sentAt(LocalDateTime.now())
-                .lastAttemptAt(LocalDateTime.now())
-                .attemptCount(1)
-                .channel(channel != null ? channel.toUpperCase() : "WHATSAPP_WEB")
-                .message(message)
-                .status(ReminderStatus.SENT.name())
-                .build();
+        // Channel is WHATSAPP_WEB or manual:
+        // Find existing today's reminder log for this student if present, or create new
+        List<PaymentReminderLog> existingToday = reminderRepository.findByStudentIdAndReminderDate(student.getStudentId(), today);
+        PaymentReminderLog logEntry;
+        if (!existingToday.isEmpty()) {
+            logEntry = existingToday.get(0);
+        } else {
+            logEntry = PaymentReminderLog.builder()
+                    .studentId(student.getStudentId())
+                    .studentName(student.getFullName())
+                    .mobileNumber(student.getMobileNumber())
+                    .roomNumber(student.getRoomNumber())
+                    .bedId(student.getBedId())
+                    .amountDue(logAmount)
+                    .nextPaymentDueDate(dueDate)
+                    .daysUntilDue(daysUntilDue)
+                    .billingMonth(dueDate.format(MONTH_FORMATTER))
+                    .reminderSlot("MANUAL")
+                    .reminderDate(today)
+                    .attemptCount(0)
+                    .build();
+        }
+
+        logEntry.setStatus(ReminderStatus.SENT.name());
+        logEntry.setChannel(channel != null ? channel.toUpperCase() : "WHATSAPP_WEB");
+        logEntry.setMessage(message);
+        logEntry.setSentAt(LocalDateTime.now());
+        logEntry.setLastAttemptAt(LocalDateTime.now());
+        logEntry.setAttemptCount(logEntry.getAttemptCount() + 1);
+        logEntry.setLastError(null);
 
         PaymentReminderLog saved = reminderRepository.save(logEntry);
         auditService.log("FEE_REMINDER", "MANUAL", student.getStudentId(),
-                "Logged manual reminder via " + channel + " to " + student.getFullName());
+                "Dispatched reminder via " + logEntry.getChannel() + " to " + student.getFullName());
 
         return toDto(saved);
     }
@@ -710,7 +723,7 @@ public class PaymentReminderService {
                 .paid(paidCount)
                 .totalActive(activeStudents.size())
                 .whatsAppConfigured(whatsAppService.isConfigured())
-                .whatsAppProvider(whatsAppService.isLiveConfigured() ? "META_CLOUD_API" : (whatsAppService.isSandbox() ? "META_SANDBOX" : "WHATSAPP_WEB"))
+                .whatsAppProvider(whatsAppService.isConfigured() ? "META_CLOUD_API" : "WHATSAPP_WEB")
                 .build();
     }
 

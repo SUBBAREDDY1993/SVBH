@@ -23,8 +23,9 @@ services:
     container_name: svbh-backend
     restart: always
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
+      - PORT=8081
       - MONGODB_URI=mongodb://mongo:27017/svboys_hostel
       - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       - JWT_EXPIRATION_MS=86400000

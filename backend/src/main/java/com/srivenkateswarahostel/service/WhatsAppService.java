@@ -62,22 +62,27 @@ public class WhatsAppService {
     public boolean isLiveConfigured() {
         return enabled
                 && !sandboxMode
-                && accessToken != null && !accessToken.isBlank() && !accessToken.startsWith("sandbox_")
-                && phoneNumberId != null && !phoneNumberId.isBlank() && !"105948372619485".equals(phoneNumberId);
+                && accessToken != null && !accessToken.isBlank()
+                && !accessToken.startsWith("sandbox_")
+                && !"your_permanent_access_token_here".equalsIgnoreCase(accessToken.trim())
+                && phoneNumberId != null && !phoneNumberId.isBlank()
+                && !"105948372619485".equals(phoneNumberId.trim())
+                && !"your_phone_number_id_here".equalsIgnoreCase(phoneNumberId.trim());
     }
 
     /**
      * Check if service is operating in simulated sandbox / demo mode.
      */
     public boolean isSandbox() {
-        return enabled && (sandboxMode || (accessToken != null && accessToken.startsWith("sandbox_")));
+        return enabled && sandboxMode;
     }
 
     /**
-     * Check if Meta WhatsApp service is operational (either live credentials configured or sandbox mode active).
+     * Check if Meta WhatsApp service credentials are set for automatic dispatch.
+     * When credentials are set, reminders dispatch automatically. Otherwise, dispatch via WhatsApp Web/App.
      */
     public boolean isConfigured() {
-        return enabled && (isLiveConfigured() || isSandbox());
+        return isLiveConfigured();
     }
 
 
@@ -144,8 +149,8 @@ public class WhatsAppService {
         }
 
         if (!isConfigured()) {
-            String err = "Meta WhatsApp Cloud API is not configured. Please set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID in environment or application.properties.";
-            log.warn("WhatsApp dispatch skipped for {}: {}", maskPhone(normalizedPhone), err);
+            String err = "Meta WhatsApp Cloud API credentials not configured. Click WhatsApp to dispatch via Web/App.";
+            log.info("WhatsApp dispatch skipped for {}: {}", maskPhone(normalizedPhone), err);
             return WhatsAppSendResult.failure(err, normalizedPhone, null, 503);
         }
 

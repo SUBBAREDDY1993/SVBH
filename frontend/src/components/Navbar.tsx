@@ -444,6 +444,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       window.open(rem.whatsappUrl, '_blank');
+                                      reminderService.recordManualReminder(rem.studentId, 'WHATSAPP_WEB', rem.reminderText).catch(() => {});
                                     }}
                                   >
                                     <WhatsAppIcon fontSize="small" />

@@ -8,9 +8,29 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class RootController {
 
+    @GetMapping(value = {"/api", "/api/", "/api/health", "/health"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> apiHealth() {
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("status", "UP");
+        response.put("application", "Sri Venkateswara Boys Hostel Management API");
+        response.put("version", "1.0.0");
+        String port = System.getenv("PORT");
+        response.put("environment", port != null ? "production" : "development");
+        response.put("port", port != null ? port : "8081");
+        response.put("frontendUrl", "https://svbh-10.onrender.com");
+        response.put("swaggerDocs", "/swagger-ui/index.html");
+        response.put("timestamp", java.time.Instant.now().toString());
+        return org.springframework.http.ResponseEntity.ok(response);
+    }
+
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     @ResponseBody
-    public String index() {
+    public String index(jakarta.servlet.http.HttpServletRequest request) {
+        String host = request.getServerName();
+        boolean isLocal = "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host);
+        String frontendUrl = isLocal ? "http://localhost:5173" : "https://svbh-10.onrender.com";
+
         return "<!DOCTYPE html>"
                 + "<html lang=\"en\">"
                 + "<head>"
@@ -114,7 +134,7 @@ public class RootController {
                 + "    <div class=\"info-box\">"
                 + "      You have connected to the backend API service. To access the user interface and manage hostel operations, please launch the React frontend web application."
                 + "    </div>"
-                + "    <a class=\"btn\" href=\"http://localhost:5173\">Open Web Application Portal</a>"
+                + "    <a class=\"btn\" href=\"" + frontendUrl + "\">Open Web Application Portal</a>"
                 + "    <div><a class=\"link-swagger\" href=\"/swagger-ui/index.html\">Explore Swagger API Documentation &rarr;</a></div>"
                 + "  </div>"
                 + "</body>"

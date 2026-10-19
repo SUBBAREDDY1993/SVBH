@@ -65,7 +65,7 @@ export const reminderService = {
 
   async recordManualReminder(
     studentId: string,
-    channel: 'WHATSAPP' | 'SMS' | 'CALL',
+    channel: 'WHATSAPP' | 'SMS' | 'CALL' | 'WHATSAPP_WEB',
     customMessage?: string
   ): Promise<PaymentReminder> {
     const params = new URLSearchParams();

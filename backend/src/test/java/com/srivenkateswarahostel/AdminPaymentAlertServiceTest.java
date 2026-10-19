@@ -16,8 +16,28 @@ public class AdminPaymentAlertServiceTest {
     @Autowired
     private AdminPaymentAlertService adminPaymentAlertService;
 
+    @Autowired
+    private com.srivenkateswarahostel.repository.StudentRepository studentRepository;
+
     @Test
     void testGenerateAdminDueAlert_IncludesStudentsDueIn1To3Days() {
+        // Ensure test resident exists with expected due date so test is deterministic
+        com.srivenkateswarahostel.model.Student student = studentRepository.findByStudentId("SVBH-2026-002")
+                .orElseGet(() -> {
+                    com.srivenkateswarahostel.model.Student s = new com.srivenkateswarahostel.model.Student();
+                    s.setStudentId("SVBH-2026-002");
+                    s.setFullName("Manga Narender");
+                    s.setStatus(com.srivenkateswarahostel.model.StudentStatus.ACTIVE);
+                    return s;
+                });
+        student.setFullName("Manga Narender");
+        student.setPaymentDueDay(5);
+        student.setNextPaymentDueDate(LocalDate.of(2026, 10, 5));
+        student.setMonthlyRent(5500.0);
+        student.setPaymentStatus("PENDING");
+        student.setStatus(com.srivenkateswarahostel.model.StudentStatus.ACTIVE);
+        studentRepository.save(student);
+
         LocalDate today = LocalDate.of(2026, 10, 3);
         AdminDueAlertDto alert = adminPaymentAlertService.generateAdminDueAlert(today);
 

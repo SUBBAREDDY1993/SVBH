@@ -70,7 +70,7 @@ public class PaymentReminderController {
         String msg = "SENT".equalsIgnoreCase(result.getStatus())
                 ? "WhatsApp fee reminder sent successfully to " + result.getStudentName()
                 : "PENDING".equalsIgnoreCase(result.getStatus())
-                ? "Prepared reminder. Open WhatsApp Web/App to dispatch."
+                ? "When Meta WhatsApp Cloud API credentials are set, reminders dispatch automatically. Otherwise, click WhatsApp to dispatch via Web/App."
                 : "Failed to dispatch WhatsApp reminder: " + (result.getLastError() != null ? result.getLastError() : "Unknown error");
         return ResponseEntity.ok(ApiResponse.success(result, msg));
     }

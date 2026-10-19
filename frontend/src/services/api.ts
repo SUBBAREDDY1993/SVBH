@@ -1,34 +1,60 @@
 import axios from 'axios';
 
-// Resolve API Base URL dynamically:
-// 1. Local machine (localhost / 127.0.0.1) -> '/api' via Vite dev proxy to port 8081
-// 2. Mobile device on local Wi-Fi (e.g. 192.168.x.x, 10.x.x.x) -> '/api' via Vite dev proxy on laptop to port 8081
-// 3. Cloud / Render deployment (e.g. svbh-10.onrender.com) -> VITE_API_BASE_URL or Render backend URL
-const getApiBaseUrl = (): string => {
+/**
+ * Resolves the API Base URL cleanly across environments:
+ * 1. Local Development (laptop):
+ *    - Uses VITE_API_BASE_URL (http://localhost:8081/api) or '/api' Vite proxy
+ * 2. Production (Render cloud - svbh-10.onrender.com):
+ *    - Uses VITE_API_BASE_URL (https://svbh-backend.onrender.com/api)
+ *    - Automatically strips any accidental localhost references when running in the cloud
+ * 3. Mobile LAN Testing:
+ *    - Routes through Vite dev proxy on laptop when accessing via local Wi-Fi IP
+ */
+export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
 
-    // A. Local machine (laptop)
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return '/api';
+    // A. Deployed Cloud Production (svbh-10.onrender.com or any cloud domain)
+    const isCloudHost =
+      host === 'svbh-10.onrender.com' ||
+      host.endsWith('.onrender.com') ||
+      host.includes('onrender.com');
+
+    if (isCloudHost) {
+      const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+      if (envUrl && envUrl.trim() !== '' && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+        return envUrl.trim();
+      }
+      return 'https://svbh-backend.onrender.com/api';
     }
 
-    // B. Mobile device on local Wi-Fi / LAN
+    // B. Mobile device on local Wi-Fi / LAN accessing laptop (e.g. 192.168.x.x, 10.x.x.x, *.local)
     const isLocalNetwork =
       host.startsWith('192.168.') ||
       host.startsWith('10.') ||
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
-      host.endsWith('.local');
+      host.endsWith('.local') ||
+      host.endsWith('.lan');
 
     if (isLocalNetwork) {
-      // Use relative '/api' so mobile requests route through the Vite proxy running on the laptop to Spring Boot.
+      // Must use relative '/api' so mobile requests route through the Vite proxy on the laptop to Spring Boot port 8081
+      return '/api';
+    }
+
+    // C. Localhost on laptop
+    const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '';
+    if (isLocalhost) {
       return '/api';
     }
   }
 
-  // C. Cloud / Render deployment
+  // Fallback based on Vite build mode
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+
   const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl.trim() !== '' && !envUrl.includes('localhost:8081')) {
+  if (envUrl && envUrl.trim() !== '' && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     return envUrl.trim();
   }
 
